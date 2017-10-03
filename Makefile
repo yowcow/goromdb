@@ -1,7 +1,7 @@
 all: dep
 
 dep:
-	dep ensure -update
+	dep ensure
 
 test:
 	go test ./...
