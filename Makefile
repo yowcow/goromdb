@@ -6,4 +6,10 @@ dep:
 test:
 	go test ./...
 
-.PHONY: dep test
+build:
+	go build -o romdb ./cmd/server
+
+docker/%:
+	make -C docker $(notdir $@)
+
+.PHONY: dep test docker/%
