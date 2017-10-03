@@ -14,9 +14,9 @@ type MemcachedProto struct {
 	re *regexp.Regexp
 }
 
-func New() proto.Protocol {
+func New() (proto.Protocol, error) {
 	re := regexp.MustCompile(`^gets?\s`)
-	return &MemcachedProto{re}
+	return &MemcachedProto{re}, nil
 }
 
 func (p MemcachedProto) Parse(line []byte) ([][]byte, error) {
@@ -24,7 +24,6 @@ func (p MemcachedProto) Parse(line []byte) ([][]byte, error) {
 		line := p.re.ReplaceAll(line, []byte(""))
 		return bytes.Split(line, []byte(" ")), nil
 	}
-
 	return [][]byte{}, fmt.Errorf("invalid command: %s", string(line))
 }
 
