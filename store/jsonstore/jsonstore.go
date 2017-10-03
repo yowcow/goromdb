@@ -48,7 +48,7 @@ func (s JSONStore) Get(key string) (string, error) {
 func (s JSONStore) Shutdown() error {
 	s.quit <- true
 	s.wg.Wait()
-	s.logger.Print("-> store shutdown complete")
+	s.logger.Print("-> store shutdown completed!")
 	return nil
 }
 
@@ -89,7 +89,7 @@ func (s JSONStore) startDataNode(file string) {
 				s.out <- nil
 			}
 		case <-s.quit:
-			s.logger.Print("-> store shutting down")
+			s.logger.Print("-> store shutting down!")
 			if !t.Stop() {
 				<-t.C
 			}
