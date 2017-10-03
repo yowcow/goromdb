@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 
-	"github.com/yowcow/go-romdb/proto/memcachedproto"
+	"github.com/yowcow/go-romdb/protocol/memcachedprotocol"
 	"github.com/yowcow/go-romdb/server"
 	"github.com/yowcow/go-romdb/store/teststore"
 )
@@ -13,7 +13,7 @@ func main() {
 	flag.StringVar(&addr, "addr", ":11211", "Address to bind to")
 	flag.Parse()
 
-	proto, err := memcachedproto.New()
+	proto, err := memcachedprotocol.New()
 
 	if err != nil {
 		panic(err)

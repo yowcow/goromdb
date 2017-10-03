@@ -1,4 +1,4 @@
-package memcachedproto
+package memcachedprotocol
 
 import (
 	"bufio"
@@ -7,19 +7,19 @@ import (
 	"regexp"
 	"strconv"
 
-	"github.com/yowcow/go-romdb/proto"
+	"github.com/yowcow/go-romdb/protocol"
 )
 
-type MemcachedProto struct {
+type MemcachedProtocol struct {
 	re *regexp.Regexp
 }
 
-func New() (proto.Protocol, error) {
+func New() (protocol.Protocol, error) {
 	re := regexp.MustCompile(`^gets?\s`)
-	return &MemcachedProto{re}, nil
+	return &MemcachedProtocol{re}, nil
 }
 
-func (p MemcachedProto) Parse(line []byte) ([][]byte, error) {
+func (p MemcachedProtocol) Parse(line []byte) ([][]byte, error) {
 	if p.re.Match(line) {
 		line := p.re.ReplaceAll(line, []byte(""))
 		return bytes.Split(line, []byte(" ")), nil
@@ -27,7 +27,7 @@ func (p MemcachedProto) Parse(line []byte) ([][]byte, error) {
 	return [][]byte{}, fmt.Errorf("invalid command: %s", string(line))
 }
 
-func (p MemcachedProto) Reply(w *bufio.Writer, key string, data string) {
+func (p MemcachedProtocol) Reply(w *bufio.Writer, key string, data string) {
 	w.WriteString("VALUE ")
 	w.WriteString(key)
 	w.WriteString(" 0 ")
@@ -37,6 +37,6 @@ func (p MemcachedProto) Reply(w *bufio.Writer, key string, data string) {
 	w.WriteString("\r\n")
 }
 
-func (p MemcachedProto) Finish(w *bufio.Writer) {
+func (p MemcachedProtocol) Finish(w *bufio.Writer) {
 	w.WriteString("END\r\n")
 }

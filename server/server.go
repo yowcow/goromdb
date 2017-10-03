@@ -6,19 +6,19 @@ import (
 	"net"
 	"os"
 
-	"github.com/yowcow/go-romdb/proto"
+	"github.com/yowcow/go-romdb/protocol"
 	"github.com/yowcow/go-romdb/store"
 )
 
 type Server struct {
 	proto    string
 	addr     string
-	protocol proto.Protocol
+	protocol protocol.Protocol
 	store    store.Store
 	logger   *log.Logger
 }
 
-func New(proto, addr string, protocol proto.Protocol, store store.Store) *Server {
+func New(proto, addr string, protocol protocol.Protocol, store store.Store) *Server {
 	logger := log.New(os.Stdout, "", log.LstdFlags|log.Lshortfile)
 	return &Server{proto, addr, protocol, store, logger}
 }

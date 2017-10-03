@@ -1,4 +1,4 @@
-package memcachedproto
+package memcachedprotocol
 
 import (
 	"bufio"
@@ -15,8 +15,8 @@ func TestNew(t *testing.T) {
 }
 
 func TestParse_on_get_command(t *testing.T) {
-	proto, _ := New()
-	words, err := proto.Parse([]byte("get hoge"))
+	p, _ := New()
+	words, err := p.Parse([]byte("get hoge"))
 
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(words))
@@ -24,8 +24,8 @@ func TestParse_on_get_command(t *testing.T) {
 }
 
 func TestParse_on_gets_command(t *testing.T) {
-	proto, _ := New()
-	words, err := proto.Parse([]byte("gets hoge fuga"))
+	p, _ := New()
+	words, err := p.Parse([]byte("gets hoge fuga"))
 
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(words))
@@ -34,8 +34,8 @@ func TestParse_on_gets_command(t *testing.T) {
 }
 
 func TestParse_on_invalid_command(t *testing.T) {
-	proto, _ := New()
-	words, err := proto.Parse([]byte("set hoge fuga foo bar"))
+	p, _ := New()
+	words, err := p.Parse([]byte("set hoge fuga foo bar"))
 
 	assert.Equal(t, "invalid command: set hoge fuga foo bar", err.Error())
 	assert.Equal(t, 0, len(words))
@@ -45,8 +45,8 @@ func TestReply(t *testing.T) {
 	buf := new(bytes.Buffer)
 	w := bufio.NewWriter(buf)
 
-	proto, _ := New()
-	proto.Reply(w, "hoge", "hogefuga")
+	p, _ := New()
+	p.Reply(w, "hoge", "hogefuga")
 	err := w.Flush()
 
 	assert.Nil(t, err)
@@ -57,8 +57,8 @@ func TestFinish(t *testing.T) {
 	buf := new(bytes.Buffer)
 	w := bufio.NewWriter(buf)
 
-	proto, _ := New()
-	proto.Finish(w)
+	p, _ := New()
+	p.Finish(w)
 	err := w.Flush()
 
 	assert.Nil(t, err)
