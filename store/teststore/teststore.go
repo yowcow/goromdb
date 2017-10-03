@@ -24,3 +24,7 @@ func (s StoreTest) Get(key string) (string, error) {
 	}
 	return "", store.KeyNotFoundError(key)
 }
+
+func (s StoreTest) Shutdown() error {
+	return nil
+}
