@@ -6,6 +6,18 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestLoadJSON_returns_error_on_non_existing_file(t *testing.T) {
+	_, err := LoadJSON("./hoge/fuga")
+
+	assert.NotNil(t, err)
+}
+
+func TestLoadJSON_returns_error_on_invalid_JSON(t *testing.T) {
+	_, err := LoadJSON("./jsonstore-invalid.json")
+
+	assert.NotNil(t, err)
+}
+
 func TestNew(t *testing.T) {
 	store, err := New("./jsonstore-data.json")
 	store.Shutdown()
