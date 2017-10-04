@@ -4,25 +4,27 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"regexp"
 	"strconv"
 
 	"github.com/yowcow/go-romdb/protocol"
 )
 
+var prefix = []string{"gets ", "get "}
+var space = []byte(" ")
+
 type MemcachedProtocol struct {
-	re *regexp.Regexp
 }
 
 func New() (protocol.Protocol, error) {
-	re := regexp.MustCompile(`^gets?\s`)
-	return &MemcachedProtocol{re}, nil
+	return &MemcachedProtocol{}, nil
 }
 
 func (p MemcachedProtocol) Parse(line []byte) ([][]byte, error) {
-	if p.re.Match(line) {
-		line := p.re.ReplaceAll(line, []byte(""))
-		return bytes.Split(line, []byte(" ")), nil
+	for _, p := range prefix {
+		if bytes.HasPrefix(line, []byte(p)) {
+			words := bytes.Split(line, space)
+			return words[1:], nil
+		}
 	}
 	return [][]byte{}, fmt.Errorf("invalid command: %s", string(line))
 }
