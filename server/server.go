@@ -49,8 +49,11 @@ func (s Server) Start() error {
 func (s Server) handleConn(conn net.Conn) {
 	defer conn.Close()
 
+	r := bufio.NewReader(conn)
+	w := bufio.NewWriter(conn)
+
 	for {
-		line, _, err := bufio.NewReader(conn).ReadLine()
+		line, _, err := r.ReadLine()
 
 		if err != nil {
 			s.logger.Print("-> read error:", err)
@@ -59,7 +62,6 @@ func (s Server) handleConn(conn net.Conn) {
 
 		s.logger.Print("-> read a line:", string(line))
 
-		w := bufio.NewWriter(conn)
 		keys, err := s.protocol.Parse(line)
 
 		if err != nil {

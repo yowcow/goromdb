@@ -3,7 +3,6 @@ package memcachedprotocol
 import (
 	"bufio"
 	"bytes"
-	"fmt"
 	"strconv"
 
 	"github.com/yowcow/go-romdb/protocol"
@@ -26,7 +25,7 @@ func (p MemcachedProtocol) Parse(line []byte) ([][]byte, error) {
 			return words[1:], nil
 		}
 	}
-	return [][]byte{}, fmt.Errorf("invalid command: %s", string(line))
+	return [][]byte{}, protocol.InvalidCommandError(line)
 }
 
 func (p MemcachedProtocol) Reply(w *bufio.Writer, key string, data string) {
