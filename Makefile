@@ -1,4 +1,6 @@
-all: dep
+BINARY = romdb
+
+all: dep $(BINARY)
 
 dep:
 	dep ensure
@@ -6,10 +8,16 @@ dep:
 test:
 	go test ./...
 
-build:
-	go build -o romdb ./cmd/server
+$(BINARY):
+	go build -o $@ ./cmd/server
+
+clean:
+	rm -rf $(BINARY)
+
+realclean: clean
+	rm -rf vendor
 
 docker/%:
 	make -C docker $(notdir $@)
 
-.PHONY: dep test docker/%
+.PHONY: dep test clean realclean docker/%
