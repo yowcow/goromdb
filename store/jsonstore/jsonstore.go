@@ -13,121 +13,109 @@ import (
 
 type Data map[string]string
 
-type JSONStore struct {
-	in     chan *string
-	out    chan *string
-	quit   chan bool
-	wg     *sync.WaitGroup
+type Store struct {
+	file   string
+	data   Data
 	logger *log.Logger
+
+	dataNodeQuit chan bool
+	dataNodeWg   *sync.WaitGroup
+
+	watcherQuit chan bool
+	watcherWg   *sync.WaitGroup
 }
 
 func New(file string) (store.Store, error) {
-	in := make(chan *string)
-	out := make(chan *string)
-	boot := make(chan bool)
-	quit := make(chan bool)
-	wg := new(sync.WaitGroup)
+	var data Data
 	logger := log.New(os.Stdout, "", log.LstdFlags|log.Lshortfile)
+	dataUpdate := make(chan Data)
 
-	s := &JSONStore{in, out, quit, wg, logger}
+	dataNodeWg := &sync.WaitGroup{}
+	dataNodeQuit := make(chan bool)
 
-	wg.Add(1)
-	go s.startDataNode(file, boot)
-	<-boot // await store to boot
-	s.logger.Print("-> store started!")
+	watcherWg := &sync.WaitGroup{}
+	watcherQuit := make(chan bool)
+
+	s := &Store{file, data, logger, dataNodeQuit, dataNodeWg, watcherQuit, watcherWg}
+
+	boot := make(chan bool)
+
+	dataNodeWg.Add(1)
+	go s.startDataNode(boot, dataUpdate, dataNodeQuit, dataNodeWg)
+	<-boot
+
+	watcherWg.Add(1)
+	go s.startWatcher(boot, dataUpdate, watcherQuit, watcherWg)
+	<-boot
+
+	close(boot)
 
 	return s, nil
 }
 
-func (s JSONStore) Get(key string) (string, error) {
-	s.in <- &key
-	v := <-s.out
-	if v == nil {
-		return "", store.KeyNotFoundError(key)
+func (s Store) Get(key string) (string, error) {
+	if v, ok := s.data[key]; ok {
+		return v, nil
 	}
-	return *v, nil
+	return "", store.KeyNotFoundError(key)
 }
 
-func (s JSONStore) Shutdown() error {
-	s.quit <- true
-	s.wg.Wait()
+func (s Store) Shutdown() error {
+	s.watcherQuit <- true
+	s.watcherWg.Wait()
+	close(s.watcherQuit)
 
-	close(s.quit)
-	close(s.in)
-	close(s.out)
-	s.logger.Print("-> store finished!")
+	s.dataNodeQuit <- true
+	s.dataNodeWg.Wait()
+	close(s.dataNodeQuit)
 
 	return nil
 }
 
-func (s JSONStore) startDataNode(file string, boot chan bool) {
-	defer s.wg.Done()
+func (s *Store) startDataNode(boot chan bool, in chan Data, q chan bool, wg *sync.WaitGroup) {
+	defer wg.Done()
 
-	var data Data
-	data, err := LoadJSON(file)
-
-	if err != nil {
-		s.logger.Println("-> store initial data load failed: ", err)
+	if data, err := LoadJSON(s.file); err == nil {
+		s.data = data
 	}
 
-	watcherupdate := make(chan Data)
-	watcherboot := make(chan bool)
-	watcherquit := make(chan bool)
-	watcherwg := new(sync.WaitGroup)
-
-	watcherwg.Add(1)
-	go s.startWatcher(file, watcherupdate, watcherboot, watcherquit, watcherwg)
-
-	<-watcherboot // await watcher to boot
-	close(boot)
-	s.logger.Print("-> datanode started!")
+	boot <- true
+	s.logger.Print("-> datastore started!")
 
 	for {
 		select {
-		case d := <-watcherupdate:
-			data = d
-			s.logger.Print("-> datanode loaded with new data!")
-		case k := <-s.in:
-			if v, ok := data[*k]; ok {
-				s.out <- &v
-			} else {
-				s.out <- nil
-			}
-		case <-s.quit:
-			watcherquit <- true
-			watcherwg.Wait()
-
-			close(watcherupdate)
-			close(watcherquit)
-
-			s.logger.Print("-> datanode finished!")
+		case data := <-in:
+			s.logger.Print("-> datastore updated!")
+			s.data = data
+		case <-q:
+			s.logger.Print("-> datastore finished!")
 			return
 		}
 	}
 }
 
-func (s JSONStore) startWatcher(file string, out chan Data, boot chan bool, quit chan bool, wg *sync.WaitGroup) {
+func (s Store) startWatcher(boot chan bool, out chan Data, q chan bool, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	var lastModified time.Time
 
-	if fi, err := os.Stat(file); err == nil {
+	if fi, err := os.Stat(s.file); err == nil {
 		lastModified = fi.ModTime()
 	}
 
 	d := 5 * time.Second
 	t := time.NewTimer(d)
 
-	close(boot)
+	boot <- true
 	s.logger.Print("-> watcher started!")
 
 	for {
 		select {
 		case <-t.C:
-			if fi, err := os.Stat(file); err == nil {
+			if fi, err := os.Stat(s.file); err == nil {
 				if fi.ModTime() != lastModified {
 					lastModified = fi.ModTime()
-					if data, err := LoadJSON(file); err == nil {
+					if data, err := LoadJSON(s.file); err == nil {
 						out <- data
 					} else {
 						s.logger.Print("-> watcher failed reading data from file: ", err)
@@ -137,7 +125,7 @@ func (s JSONStore) startWatcher(file string, out chan Data, boot chan bool, quit
 				s.logger.Print("-> watcher file check failed: ", err)
 			}
 			t.Reset(d)
-		case <-quit:
+		case <-q:
 			if !t.Stop() {
 				<-t.C
 			}

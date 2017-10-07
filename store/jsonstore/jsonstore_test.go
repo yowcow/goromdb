@@ -28,10 +28,11 @@ func TestNew(t *testing.T) {
 func TestGet_on_existing_key(t *testing.T) {
 	store, _ := New("./jsonstore-data.json")
 	value, err := store.Get("hoge")
-	store.Shutdown()
 
 	assert.Nil(t, err)
 	assert.Equal(t, "hoge!!!", value)
+
+	store.Shutdown()
 }
 
 func TestGet_on_non_existing_key(t *testing.T) {
