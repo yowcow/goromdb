@@ -11,16 +11,22 @@ import (
 	"github.com/yowcow/go-romdb/store"
 )
 
+type TestKeywords map[string][][]byte
+
 type TestProtocol struct {
+	keywords TestKeywords
 }
 
 func createTestProtocol() protocol.Protocol {
-	return &TestProtocol{}
+	keywords := TestKeywords{
+		"hoge": {[]byte("foo"), []byte("bar")},
+	}
+	return &TestProtocol{keywords}
 }
 
 func (p TestProtocol) Parse(line []byte) ([][]byte, error) {
-	if string(line) == "hoge" {
-		return [][]byte{[]byte("foo"), []byte("bar")}, nil
+	if words, ok := p.keywords[string(line)]; ok {
+		return words, nil
 	}
 	return [][]byte{}, fmt.Errorf("invalid command")
 }
@@ -36,22 +42,25 @@ func (p TestProtocol) Finish(w *bufio.Writer) {
 	w.WriteString("BYE\r\n")
 }
 
+type TestData map[string]string
+
 type TestStore struct {
+	data TestData
 }
 
 func createTestStore() store.Store {
-	return &TestStore{}
+	data := TestData{
+		"foo": "foo!",
+		"bar": "bar!!",
+	}
+	return &TestStore{data}
 }
 
 func (s TestStore) Get(key string) (string, error) {
-	switch key {
-	case "foo":
-		return "foo!", nil
-	case "bar":
-		return "bar!!", nil
-	default:
-		return "", fmt.Errorf("invalid key")
+	if v, ok := s.data[key]; ok {
+		return v, nil
 	}
+	return "", store.KeyNotFoundError(key)
 }
 
 func (s TestStore) Shutdown() error {
