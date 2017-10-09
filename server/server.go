@@ -5,25 +5,34 @@ import (
 	"log"
 	"net"
 	"os"
+	"sync"
 
 	"github.com/yowcow/go-romdb/protocol"
 	"github.com/yowcow/go-romdb/store"
 )
 
 type Server struct {
-	proto    string
-	addr     string
+	proto string
+	addr  string
+
 	protocol protocol.Protocol
 	store    store.Store
-	logger   *log.Logger
+
+	quit   chan bool
+	wg     *sync.WaitGroup
+	logger *log.Logger
 }
 
 func New(proto, addr string, protocol protocol.Protocol, store store.Store) *Server {
+	quit := make(chan bool)
+	wg := &sync.WaitGroup{}
 	logger := log.New(os.Stdout, "", log.LstdFlags|log.Lshortfile)
-	return &Server{proto, addr, protocol, store, logger}
+	return &Server{proto, addr, protocol, store, quit, wg, logger}
 }
 
 func (s Server) Start() error {
+	defer s.wg.Done()
+
 	ln, err := net.Listen(s.proto, s.addr)
 	defer ln.Close()
 
@@ -32,18 +41,40 @@ func (s Server) Start() error {
 		return err
 	}
 
-	s.logger.Print("server listening on port:", s.addr)
+	nc := make(chan net.Conn)
+	go func(l net.Listener, n chan net.Conn) {
+		for {
+			conn, err := l.Accept()
+
+			if err != nil {
+				s.logger.Print("-> failed accepting a new conn: ", err)
+			} else {
+				n <- conn
+			}
+		}
+	}(ln, nc)
+
+	s.wg.Add(1)
+	s.logger.Print("server listening on port: ", s.addr)
 
 	for {
-		conn, err := ln.Accept()
-
-		if err != nil {
-			s.logger.Print("-> failed accepting a new conn:", err)
-		} else {
+		select {
+		case conn := <-nc:
 			s.logger.Print("-> accepted a new conn")
 			go s.handleConn(conn)
+		case <-s.quit:
+			s.logger.Print("-> server shutting down")
+			s.store.Shutdown()
+			return nil
 		}
 	}
+}
+
+func (s Server) Shutdown() error {
+	s.quit <- true
+	close(s.quit)
+	s.wg.Wait()
+	return nil
 }
 
 func (s Server) handleConn(conn net.Conn) {

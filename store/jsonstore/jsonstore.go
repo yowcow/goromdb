@@ -62,12 +62,12 @@ func (s Store) Get(key string) (string, error) {
 
 func (s Store) Shutdown() error {
 	s.watcherQuit <- true
-	s.watcherWg.Wait()
 	close(s.watcherQuit)
+	s.watcherWg.Wait()
 
 	s.dataNodeQuit <- true
-	s.dataNodeWg.Wait()
 	close(s.dataNodeQuit)
+	s.dataNodeWg.Wait()
 
 	return nil
 }
