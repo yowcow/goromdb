@@ -3,7 +3,9 @@ package server
 import (
 	"bufio"
 	"fmt"
+	"log"
 	"net"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -45,7 +47,8 @@ func (p TestProtocol) Finish(w *bufio.Writer) {
 type TestData map[string]string
 
 type TestStore struct {
-	data TestData
+	data   TestData
+	logger *log.Logger
 }
 
 func createTestStore() store.Store {
@@ -53,7 +56,8 @@ func createTestStore() store.Store {
 		"foo": "foo!",
 		"bar": "bar!!",
 	}
-	return &TestStore{data}
+	logger := log.New(os.Stdout, "", log.LstdFlags|log.Lshortfile)
+	return &TestStore{data, logger}
 }
 
 func (s TestStore) Get(key string) (string, error) {
@@ -64,6 +68,7 @@ func (s TestStore) Get(key string) (string, error) {
 }
 
 func (s TestStore) Shutdown() error {
+	s.logger.Print("store shutting down")
 	return nil
 }
 
@@ -119,4 +124,5 @@ func TestServer(t *testing.T) {
 	}
 
 	assert.Nil(t, conn.Close())
+	assert.Nil(t, server.Shutdown())
 }
