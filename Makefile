@@ -8,6 +8,9 @@ dep:
 test:
 	go test ./...
 
+bench:
+	go test -bench .
+
 $(BINARY):
 	go build -o $@ ./cmd/server
 
@@ -26,4 +29,4 @@ docker/run:
 docker/rmi:
 	docker rmi $(BINARY)
 
-.PHONY: dep test clean realclean docker/build docker/run docker/rmi
+.PHONY: dep test bench clean realclean docker/build docker/run docker/rmi
