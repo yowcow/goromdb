@@ -91,11 +91,7 @@ func (s Server) handleConn(conn net.Conn) {
 			break
 		}
 
-		s.logger.Print("-> read a line:", string(line))
-
-		keys, err := s.protocol.Parse(line)
-
-		if err != nil {
+		if keys, err := s.protocol.Parse(line); err != nil {
 			s.logger.Print("-> protocol error:", err)
 		} else {
 			for _, k := range keys {
