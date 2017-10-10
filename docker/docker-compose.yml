@@ -1,11 +1,9 @@
 memcached:
   image: memcached:latest
   ports:
-    - "11211:11211"
+    - "11222:11211"
 
 romdb:
-  build: ./
-  volumes:
-    - ./../:/go/src/github.com/yowcow/go-romdb:rw
-  links:
-    - memcached
+  build: ./../
+  ports:
+    - "11223:11211"

@@ -17,7 +17,7 @@ clean:
 realclean: clean
 	rm -rf vendor
 
-docker/%:
-	make -C docker $(notdir $@)
+docker:
+	docker build -t $(BINARY) .
 
-.PHONY: dep test clean realclean docker/%
+.PHONY: dep test clean realclean docker

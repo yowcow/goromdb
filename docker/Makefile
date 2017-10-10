@@ -3,10 +3,13 @@ all:
 build:
 	docker-compose build
 
-run:
-	docker-compose run --rm -p 11212:11211 romdb
+up:
+	docker-compose up -d
+
+stop:
+	docker-compose stop
 
 down:
 	docker-compose down
 
-.PHONY: all build run
+.PHONY: all build up stop down
