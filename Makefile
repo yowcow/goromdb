@@ -17,7 +17,13 @@ clean:
 realclean: clean
 	rm -rf vendor
 
-docker:
+docker/build:
 	docker build -t $(BINARY) .
 
-.PHONY: dep test clean realclean docker
+docker/run:
+	docker run --rm $(BINARY)
+
+docker/rmi:
+	docker rmi $(BINARY)
+
+.PHONY: dep test clean realclean docker/build docker/run docker/rmi
