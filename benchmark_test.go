@@ -6,9 +6,7 @@ import (
 	"github.com/bradfitz/gomemcache/memcache"
 )
 
-func benchmark(host string, b *testing.B) {
-	mc := memcache.New(host)
-	mc.Set(&memcache.Item{Key: "hoge", Value: []byte("hoge!")})
+func benchmark(mc *memcache.Client, b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		mc.Get("hoge")
@@ -16,9 +14,13 @@ func benchmark(host string, b *testing.B) {
 }
 
 func Benchmark_memcached(b *testing.B) {
-	benchmark("localhost:11222", b)
+	mc := memcache.New("localhost:11223")
+	// let memcached server have key "hoge"
+	mc.Set(&memcache.Item{Key: "hoge", Value: []byte("hoge!")})
+	benchmark(mc, b)
 }
 
 func Benchmark_romdb(b *testing.B) {
-	benchmark("localhost:11223", b)
+	mc := memcache.New("localhost:11224")
+	benchmark(mc, b)
 }
