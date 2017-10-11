@@ -1,5 +1,6 @@
 FROM golang:1.9
 
+RUN apt-get update && apt-get -yqq install libdb-dev
 RUN mkdir -p /go/src/github.com/yowcow/go-romdb
 RUN go get github.com/golang/dep/cmd/dep
 
