@@ -1,9 +1,9 @@
 memcached:
   image: memcached:latest
   ports:
-    - "11222:11211"
+    - "11223:11211"
 
 romdb:
   build: ./../
   ports:
-    - "11223:11211"
+    - "11224:11211"
