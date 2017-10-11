@@ -8,7 +8,7 @@ import (
 	"github.com/yowcow/go-romdb/protocol"
 )
 
-var prefix = []string{"gets ", "get "}
+var prefixes = [][]byte{[]byte("gets "), []byte("get ")}
 var space = []byte(" ")
 
 type MemcachedProtocol struct {
@@ -19,8 +19,8 @@ func New() (protocol.Protocol, error) {
 }
 
 func (p MemcachedProtocol) Parse(line []byte) ([][]byte, error) {
-	for _, p := range prefix {
-		if bytes.HasPrefix(line, []byte(p)) {
+	for _, prefix := range prefixes {
+		if bytes.HasPrefix(line, prefix) {
 			words := bytes.Split(line, space)
 			return words[1:], nil
 		}
