@@ -7,6 +7,7 @@ import (
 	"net"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/yowcow/go-romdb/protocol"
@@ -103,6 +104,7 @@ func TestServer(t *testing.T) {
 		server.Start()
 	}()
 
+	time.Sleep(1 * time.Second) // should wait server to get started
 	conn, err := net.Dial("tcp", "localhost:11222")
 
 	assert.Nil(t, err)
