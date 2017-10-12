@@ -1,12 +1,17 @@
 BINARY = romdb
+CIDFILE = .romdb-cid
+DB_FILES = data/sample-bdb.db
 
-all: dep $(BINARY)
+all: dep $(DB_FILES) $(BINARY)
 
 dep:
 	dep ensure
 
-test:
+test: $(DB_FILES)
 	go test ./...
+
+data/sample-bdb.db:
+	go run ./cmd/sample_bdb_data.go -output-to $@
 
 bench:
 	go test -bench .
@@ -15,7 +20,7 @@ $(BINARY):
 	go build -o $@ ./cmd/server
 
 clean:
-	rm -rf $(BINARY)
+	rm -rf $(BINARY) $(DB_FILES)
 
 realclean: clean
 	rm -rf vendor
@@ -24,9 +29,17 @@ docker/build:
 	docker build -t $(BINARY) .
 
 docker/run:
-	docker run --rm -v `pwd`:/go/src/github.com/yowcow/go-romdb -it $(BINARY) bash
+	docker run \
+		--rm \
+		-v `pwd`:/go/src/github.com/yowcow/go-romdb \
+		--cidfile=$(CIDFILE) \
+		-it $(BINARY) bash
+	rm -f $(CIDFILE)
+
+docker/exec:
+	test -f $(CIDFILE) && docker exec -it `cat $(CIDFILE)` bash
 
 docker/rmi:
 	docker rmi $(BINARY)
 
-.PHONY: dep test bench clean realclean docker/build docker/run docker/rmi
+.PHONY: dep test bench clean realclean docker/build docker/run docker/exec docker/rmi

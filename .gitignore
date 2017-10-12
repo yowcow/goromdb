@@ -1,3 +1,5 @@
+/.romdb-cid
 /Gopkg.lock
+/data/sample-bdb.db
 /romdb
 /vendor

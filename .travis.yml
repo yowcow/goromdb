@@ -3,6 +3,11 @@ language: go
 go:
   - 1.x
 
+addons:
+  apt:
+    packages:
+      - libdb-dev
+
 before_script:
   - go get github.com/golang/dep/cmd/dep
 
