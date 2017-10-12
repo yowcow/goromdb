@@ -1,4 +1,5 @@
 BINARY = romdb
+CIDFILE = .romdb-cid
 
 all: dep $(BINARY)
 
@@ -24,9 +25,17 @@ docker/build:
 	docker build -t $(BINARY) .
 
 docker/run:
-	docker run --rm -v `pwd`:/go/src/github.com/yowcow/go-romdb -it $(BINARY) bash
+	docker run \
+		--rm \
+		-v `pwd`:/go/src/github.com/yowcow/go-romdb \
+		--cidfile=$(CIDFILE) \
+		-it $(BINARY) bash
+	rm -f $(CIDFILE)
+
+docker/exec:
+	test -f $(CIDFILE) && docker exec -it `cat $(CIDFILE)` bash
 
 docker/rmi:
 	docker rmi $(BINARY)
 
-.PHONY: dep test bench clean realclean docker/build docker/run docker/rmi
+.PHONY: dep test bench clean realclean docker/build docker/run docker/exec docker/rmi
