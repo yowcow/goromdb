@@ -1,13 +1,12 @@
-package jsonstore
+package bdbstore
 
 import (
-	"encoding/json"
-	"io/ioutil"
 	"log"
 	"os"
 	"sync"
 	"time"
 
+	"github.com/ajiyoshi-vg/goberkeleydb/bdb"
 	"github.com/yowcow/go-romdb/store"
 )
 
@@ -16,6 +15,7 @@ type Data map[string]string
 type Store struct {
 	file   string
 	data   Data
+	db     *bdb.BerkeleyDB
 	logger *log.Logger
 
 	dataNodeQuit chan bool
@@ -28,7 +28,7 @@ type Store struct {
 func New(file string) (store.Store, error) {
 	var data Data
 	logger := log.New(os.Stdout, "", log.LstdFlags|log.Lshortfile)
-	dataUpdate := make(chan Data)
+	dbUpdate := make(chan *bdb.BerkeleyDB)
 
 	dataNodeQuit := make(chan bool)
 	dataNodeWg := &sync.WaitGroup{}
@@ -36,16 +36,16 @@ func New(file string) (store.Store, error) {
 	watcherQuit := make(chan bool)
 	watcherWg := &sync.WaitGroup{}
 
-	s := &Store{file, data, logger, dataNodeQuit, dataNodeWg, watcherQuit, watcherWg}
+	s := &Store{file, data, nil, logger, dataNodeQuit, dataNodeWg, watcherQuit, watcherWg}
 
 	boot := make(chan bool)
 
 	dataNodeWg.Add(1)
-	go s.startDataNode(boot, dataUpdate)
+	go s.startDataNode(boot, dbUpdate)
 	<-boot
 
 	watcherWg.Add(1)
-	go s.startWatcher(boot, dataUpdate)
+	go s.startWatcher(boot, dbUpdate)
 	<-boot
 
 	close(boot)
@@ -53,11 +53,11 @@ func New(file string) (store.Store, error) {
 	return s, nil
 }
 
-func (s *Store) startDataNode(boot chan<- bool, dataIn <-chan Data) {
+func (s *Store) startDataNode(boot chan<- bool, dbIn <-chan *bdb.BerkeleyDB) {
 	defer s.dataNodeWg.Done()
 
-	if data, err := LoadJSON(s.file); err == nil {
-		s.data = data
+	if db, err := OpenBDB(s.file); err == nil {
+		s.db = db
 	}
 
 	boot <- true
@@ -65,17 +65,23 @@ func (s *Store) startDataNode(boot chan<- bool, dataIn <-chan Data) {
 
 	for {
 		select {
-		case data := <-dataIn:
+		case newDB := <-dbIn:
+			oldDB := s.db
+			s.db = newDB
+			oldDB.Close(0)
 			s.logger.Print("-> datanode updated!")
-			s.data = data
 		case <-s.dataNodeQuit:
+			if s.db != nil {
+				s.db.Close(0)
+				s.db = nil
+			}
 			s.logger.Print("-> datanode finished!")
 			return
 		}
 	}
 }
 
-func (s Store) startWatcher(boot chan<- bool, dataOut chan<- Data) {
+func (s Store) startWatcher(boot chan<- bool, dbOut chan<- *bdb.BerkeleyDB) {
 	defer s.watcherWg.Done()
 
 	var lastModified time.Time
@@ -96,8 +102,8 @@ func (s Store) startWatcher(boot chan<- bool, dataOut chan<- Data) {
 			if fi, err := os.Stat(s.file); err == nil {
 				if fi.ModTime() != lastModified {
 					lastModified = fi.ModTime()
-					if data, err := LoadJSON(s.file); err == nil {
-						dataOut <- data
+					if db, err := OpenBDB(s.file); err == nil {
+						dbOut <- db
 					} else {
 						s.logger.Print("-> watcher failed reading data from file: ", err)
 					}
@@ -117,8 +123,12 @@ func (s Store) startWatcher(boot chan<- bool, dataOut chan<- Data) {
 }
 
 func (s Store) Get(key string) (string, error) {
-	if v, ok := s.data[key]; ok {
-		return v, nil
+	if s.db != nil {
+		if v, err := s.db.Get(bdb.NoTxn, []byte(key), 0); err == nil {
+			return string(v), nil
+		} else {
+			return "", err
+		}
 	}
 	return "", store.KeyNotFoundError(key)
 }
@@ -135,18 +145,6 @@ func (s Store) Shutdown() error {
 	return nil
 }
 
-func LoadJSON(file string) (Data, error) {
-	var data Data
-
-	b, err := ioutil.ReadFile(file)
-	if err != nil {
-		return data, err
-	}
-
-	err = json.Unmarshal(b, &data)
-	if err != nil {
-		return data, err
-	}
-
-	return data, nil
+func OpenBDB(file string) (*bdb.BerkeleyDB, error) {
+	return bdb.OpenBDB(bdb.NoEnv, bdb.NoTxn, file, nil, bdb.BTree, bdb.DbReadOnly, 0)
 }
