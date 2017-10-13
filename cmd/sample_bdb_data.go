@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 
 	"github.com/ajiyoshi-vg/goberkeleydb/bdb"
 )
@@ -15,8 +14,7 @@ func main() {
 	flag.StringVar(&file, "output-to", "data/sample-bdb.db", "write database to")
 	flag.Parse()
 
-	createDB(file)
-
+	writeDB(file)
 	readDB(file)
 }
 
@@ -36,15 +34,13 @@ func readDB(file string) {
 	}
 
 	for _, k := range keys {
-		if v, err := db.Get(bdb.NoTxn, []byte(k), 0); err != nil {
-			fmt.Println("-> get key: ", k, ", failed with ", err)
-		} else {
-			fmt.Println("-> get key: ", k, ", succeeded with ", string(v))
+		if _, err := db.Get(bdb.NoTxn, []byte(k), 0); err != nil {
+			panic(err)
 		}
 	}
 }
 
-func createDB(file string) {
+func writeDB(file string) {
 	db, err := bdb.OpenBDB(bdb.NoEnv, bdb.NoTxn, file, nil, bdb.BTree, bdb.DbCreate, 0)
 
 	if err != nil {
@@ -62,8 +58,6 @@ func createDB(file string) {
 	for k, v := range data {
 		if err = db.Put(bdb.NoTxn, []byte(k), []byte(v), 0); err != nil {
 			panic(err)
-		} else {
-			fmt.Println("-> put key: ", k)
 		}
 	}
 
