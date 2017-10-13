@@ -5,5 +5,13 @@ memcached:
 
 romdb:
   build: ./../
+  entrypoint:
+    - ./romdb
+    - -addr
+    - ":11211"
+    - -store
+    - bdb
+    - -file
+    - data/sample-bdb.db
   ports:
     - "11224:11211"
