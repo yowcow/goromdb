@@ -1,7 +1,9 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
+	"io/ioutil"
 
 	"github.com/ajiyoshi-vg/goberkeleydb/bdb"
 )
@@ -9,13 +11,15 @@ import (
 type Data map[string]string
 
 func main() {
-	var file string
+	var jsonFile string
+	var dbFile string
 
-	flag.StringVar(&file, "output-to", "data/sample-bdb.db", "write database to")
+	flag.StringVar(&jsonFile, "input-from", "data/sample-data.json", "read JSON from")
+	flag.StringVar(&dbFile, "output-to", "data/sample-bdb.db", "write database to")
 	flag.Parse()
 
-	writeDB(file)
-	readDB(file)
+	writeDB(jsonFile, dbFile)
+	readDB(dbFile)
 }
 
 func readDB(file string) {
@@ -40,19 +44,25 @@ func readDB(file string) {
 	}
 }
 
-func writeDB(file string) {
-	db, err := bdb.OpenBDB(bdb.NoEnv, bdb.NoTxn, file, nil, bdb.BTree, bdb.DbCreate, 0)
+func writeDB(jsonFile, dbFile string) {
+	var data Data
+
+	b, err := ioutil.ReadFile(jsonFile)
 
 	if err != nil {
 		panic(err)
 	}
 
-	data := Data{
-		"hoge": "hoge!",
-		"fuga": "fuga!!",
-		"foo":  "foo!!!",
-		"bar":  "bar!!!!",
-		"buz":  "buz!!!!!",
+	err = json.Unmarshal(b, &data)
+
+	if err != nil {
+		panic(err)
+	}
+
+	db, err := bdb.OpenBDB(bdb.NoEnv, bdb.NoTxn, dbFile, nil, bdb.BTree, bdb.DbCreate, 0)
+
+	if err != nil {
+		panic(err)
 	}
 
 	for k, v := range data {

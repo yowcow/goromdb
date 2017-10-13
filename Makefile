@@ -10,8 +10,8 @@ dep:
 test: $(DB_FILES)
 	go test ./...
 
-data/sample-bdb.db:
-	go run ./cmd/sample_bdb_data.go -output-to $@
+data/sample-bdb.db: data/sample-data.json
+	go run ./cmd/sample_bdb_data.go -input-from $< -output-to $@
 
 bench:
 	go test -bench .
