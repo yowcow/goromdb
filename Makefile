@@ -29,7 +29,7 @@ docker/build:
 	docker build -t $(BINARY) .
 
 docker/run:
-	docker run \
+	-docker run \
 		--rm \
 		-v `pwd`:/go/src/github.com/yowcow/go-romdb \
 		--cidfile=$(CIDFILE) \
