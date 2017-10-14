@@ -68,7 +68,10 @@ func (s *Store) startDataNode(boot chan<- bool, dbIn <-chan *bdb.BerkeleyDB) {
 		case newDB := <-dbIn:
 			oldDB := s.db
 			s.db = newDB
-			oldDB.Close(0)
+			if oldDB != nil {
+				oldDB.Close(0)
+				oldDB = nil
+			}
 			s.logger.Print("-> data node updated!")
 		case <-s.dataNodeQuit:
 			if s.db != nil {
