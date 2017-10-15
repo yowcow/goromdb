@@ -48,7 +48,7 @@ func (p Protocol) Finish(w *bufio.Writer) {
 	memcachedprotocol.Finish(w)
 }
 
-const _ZERO uint8 = 0
+const _Zero uint8 = 0
 
 func Serialize(w io.Writer, key, val []byte) error {
 	nKey := len(key)
@@ -64,10 +64,10 @@ func Serialize(w io.Writer, key, val []byte) error {
 		int32(nBytes),
 		uint8(nSuffix),
 		uint8(nKey),
-		_ZERO,
-		_ZERO,
+		_Zero,
+		_Zero,
 		key,
-		_ZERO,
+		_Zero,
 		sSuffix,
 		val,
 		[]byte("\r\n"),

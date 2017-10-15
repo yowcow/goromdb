@@ -23,8 +23,6 @@ func main() {
 	writeDB(jsonFile, dbFile)
 }
 
-const _ZERO uint8 = 0
-
 func writeDB(jsonFile, dbFile string) {
 	var data Data
 

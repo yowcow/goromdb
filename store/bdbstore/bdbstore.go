@@ -122,9 +122,8 @@ func (s Store) Get(key []byte) ([]byte, error) {
 	if s.db != nil {
 		if v, err := s.db.Get(bdb.NoTxn, key, 0); err == nil {
 			return v, nil
-		} else {
-			return nil, err
 		}
+		return nil, err
 	}
 	return nil, store.KeyNotFoundError(key)
 }
