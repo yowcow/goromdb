@@ -21,8 +21,8 @@ type Store struct {
 	dataNodeQuit chan bool
 	dataNodeWg   *sync.WaitGroup
 
-	watcherQuit chan bool
-	watcherWg   *sync.WaitGroup
+	dataLoaderQuit chan bool
+	dataLoaderWg   *sync.WaitGroup
 }
 
 func New(file string) (store.Store, error) {
@@ -33,10 +33,10 @@ func New(file string) (store.Store, error) {
 	dataNodeQuit := make(chan bool)
 	dataNodeWg := &sync.WaitGroup{}
 
-	watcherQuit := make(chan bool)
-	watcherWg := &sync.WaitGroup{}
+	dataLoaderQuit := make(chan bool)
+	dataLoaderWg := &sync.WaitGroup{}
 
-	s := &Store{file, data, nil, logger, dataNodeQuit, dataNodeWg, watcherQuit, watcherWg}
+	s := &Store{file, data, nil, logger, dataNodeQuit, dataNodeWg, dataLoaderQuit, dataLoaderWg}
 
 	boot := make(chan bool)
 
@@ -44,8 +44,8 @@ func New(file string) (store.Store, error) {
 	go s.startDataNode(boot, dbUpdate)
 	<-boot
 
-	watcherWg.Add(1)
-	go s.startWatcher(boot, dbUpdate)
+	dataLoaderWg.Add(1)
+	go s.startDataLoader(boot, dbUpdate)
 	<-boot
 
 	close(boot)
@@ -68,55 +68,51 @@ func (s *Store) startDataNode(boot chan<- bool, dbIn <-chan *bdb.BerkeleyDB) {
 		case newDB := <-dbIn:
 			oldDB := s.db
 			s.db = newDB
-			oldDB.Close(0)
-			s.logger.Print("-> datanode updated!")
+			if oldDB != nil {
+				oldDB.Close(0)
+				oldDB = nil
+			}
+			s.logger.Print("-> data node updated!")
 		case <-s.dataNodeQuit:
 			if s.db != nil {
 				s.db.Close(0)
 				s.db = nil
 			}
-			s.logger.Print("-> datanode finished!")
+			s.logger.Print("-> data node finished!")
 			return
 		}
 	}
 }
 
-func (s Store) startWatcher(boot chan<- bool, dbOut chan<- *bdb.BerkeleyDB) {
-	defer s.watcherWg.Done()
-
-	var lastModified time.Time
-
-	if fi, err := os.Stat(s.file); err == nil {
-		lastModified = fi.ModTime()
-	}
+func (s Store) startDataLoader(boot chan<- bool, dbOut chan<- *bdb.BerkeleyDB) {
+	defer s.dataLoaderWg.Done()
 
 	d := 5 * time.Second
-	t := time.NewTimer(d)
+	update := make(chan bool)
+	quit := make(chan bool)
+	wg := &sync.WaitGroup{}
+
+	wg.Add(1)
+	go store.NewWatcher(d, s.file, s.logger, update, quit, wg)
 
 	boot <- true
-	s.logger.Print("-> watcher started!")
+	s.logger.Print("-> data loader started!")
 
 	for {
 		select {
-		case <-t.C:
-			if fi, err := os.Stat(s.file); err == nil {
-				if fi.ModTime() != lastModified {
-					lastModified = fi.ModTime()
-					if db, err := OpenBDB(s.file); err == nil {
-						dbOut <- db
-					} else {
-						s.logger.Print("-> watcher failed reading data from file: ", err)
-					}
-				}
+		case <-update:
+			if db, err := OpenBDB(s.file); err == nil {
+				dbOut <- db
 			} else {
-				s.logger.Print("-> watcher file check failed: ", err)
+				s.logger.Print("-> data loader failed reading data from file: ", err)
 			}
-			t.Reset(d)
-		case <-s.watcherQuit:
-			if !t.Stop() {
-				<-t.C
-			}
-			s.logger.Print("-> watcher finished!")
+		case <-s.dataLoaderQuit:
+			quit <- true
+			close(quit)
+			wg.Wait()
+			close(update)
+
+			s.logger.Print("-> data loader finished!")
 			return
 		}
 	}
@@ -134,9 +130,9 @@ func (s Store) Get(key string) (string, error) {
 }
 
 func (s Store) Shutdown() error {
-	s.watcherQuit <- true
-	close(s.watcherQuit)
-	s.watcherWg.Wait()
+	s.dataLoaderQuit <- true
+	close(s.dataLoaderQuit)
+	s.dataLoaderWg.Wait()
 
 	s.dataNodeQuit <- true
 	close(s.dataNodeQuit)
