@@ -9,7 +9,7 @@ import (
 )
 
 type Store interface {
-	Get(string) (string, error)
+	Get([]byte) ([]byte, error)
 	Shutdown() error
 }
 
@@ -48,6 +48,6 @@ func NewWatcher(d time.Duration, file string, logger *log.Logger, update chan<- 
 	}
 }
 
-func KeyNotFoundError(key string) error {
-	return fmt.Errorf("key '%s' not found", key)
+func KeyNotFoundError(key []byte) error {
+	return fmt.Errorf("key '%s' not found", string(key))
 }

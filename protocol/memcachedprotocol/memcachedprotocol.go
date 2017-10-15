@@ -28,13 +28,13 @@ func (p MemcachedProtocol) Parse(line []byte) ([][]byte, error) {
 	return [][]byte{}, protocol.InvalidCommandError(line)
 }
 
-func (p MemcachedProtocol) Reply(w *bufio.Writer, key string, data string) {
+func (p MemcachedProtocol) Reply(w *bufio.Writer, k, v []byte) {
 	w.WriteString("VALUE ")
-	w.WriteString(key)
+	w.Write(k)
 	w.WriteString(" 0 ")
-	w.WriteString(strconv.Itoa(len(data)))
+	w.WriteString(strconv.Itoa(len(v)))
 	w.WriteString("\r\n")
-	w.WriteString(data)
+	w.Write(v)
 	w.WriteString("\r\n")
 }
 

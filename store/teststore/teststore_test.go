@@ -14,16 +14,16 @@ func TestNew(t *testing.T) {
 
 func TestGet_on_existing_key(t *testing.T) {
 	store, _ := New()
-	v, err := store.Get("foo")
+	v, err := store.Get([]byte("foo"))
 
 	assert.Nil(t, err)
-	assert.Equal(t, "my test foo", v)
+	assert.Equal(t, "my test foo", string(v))
 }
 
 func TestGet_on_non_existing_key(t *testing.T) {
 	store, _ := New()
-	v, err := store.Get("hogefuga")
+	v, err := store.Get([]byte("hogefuga"))
 
 	assert.NotNil(t, err)
-	assert.Equal(t, "", v)
+	assert.Nil(t, v)
 }

@@ -7,7 +7,7 @@ import (
 
 type Protocol interface {
 	Parse([]byte) ([][]byte, error)
-	Reply(*bufio.Writer, string, string)
+	Reply(*bufio.Writer, []byte, []byte)
 	Finish(*bufio.Writer)
 }
 
