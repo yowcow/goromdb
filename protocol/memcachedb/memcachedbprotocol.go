@@ -1,4 +1,4 @@
-package optmemcachedprotocol
+package memcachedbprotocol
 
 import (
 	"bufio"
