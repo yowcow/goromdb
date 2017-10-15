@@ -42,15 +42,20 @@ func TestParse_on_invalid_command(t *testing.T) {
 }
 
 func TestReply(t *testing.T) {
+	memdb := new(bytes.Buffer)
+	err := Serialize(memdb, []byte("hoge"), []byte("hogefuga!!!"))
+
+	assert.Nil(t, err)
+
 	buf := new(bytes.Buffer)
 	w := bufio.NewWriter(buf)
 
 	p, _ := New()
-	p.Reply(w, []byte("hoge"), []byte("VALUE hoge 0 8\r\nhogefuga\r\n"))
-	err := w.Flush()
+	p.Reply(w, []byte("hoge"), memdb.Bytes())
+	err = w.Flush()
 
 	assert.Nil(t, err)
-	assert.Equal(t, "VALUE hoge 0 8\r\nhogefuga\r\n", buf.String())
+	assert.Equal(t, "VALUE hoge 0 11\r\nhogefuga!!!\r\n", buf.String())
 }
 
 func TestFinish(t *testing.T) {
@@ -63,4 +68,19 @@ func TestFinish(t *testing.T) {
 
 	assert.Nil(t, err)
 	assert.Equal(t, "END\r\n", buf.String())
+}
+
+func TestSerialize_and_Deserialize(t *testing.T) {
+	buf := new(bytes.Buffer)
+	err := Serialize(buf, []byte("hoge"), []byte("ほげほげ!!"))
+
+	assert.Nil(t, err)
+
+	r := bytes.NewReader(buf.Bytes())
+	key, val, len, err := Deserialize(r)
+
+	assert.Nil(t, err)
+	assert.Equal(t, []byte("hoge"), key)
+	assert.Equal(t, []byte("ほげほげ!!"), val)
+	assert.Equal(t, 14, len)
 }

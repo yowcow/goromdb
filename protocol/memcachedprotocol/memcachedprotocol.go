@@ -19,6 +19,18 @@ func New() (protocol.Protocol, error) {
 }
 
 func (p Protocol) Parse(line []byte) ([][]byte, error) {
+	return Parse(line)
+}
+
+func (p Protocol) Reply(w *bufio.Writer, k, v []byte) {
+	Reply(w, k, v)
+}
+
+func (p Protocol) Finish(w *bufio.Writer) {
+	Finish(w)
+}
+
+func Parse(line []byte) ([][]byte, error) {
 	for _, prefix := range Prefixes {
 		if bytes.HasPrefix(line, prefix) {
 			words := bytes.Split(line, Space)
@@ -28,7 +40,7 @@ func (p Protocol) Parse(line []byte) ([][]byte, error) {
 	return [][]byte{}, protocol.InvalidCommandError(line)
 }
 
-func (p Protocol) Reply(w *bufio.Writer, k, v []byte) {
+func Reply(w *bufio.Writer, k, v []byte) {
 	w.WriteString("VALUE ")
 	w.Write(k)
 	w.WriteString(" 0 ")
@@ -38,6 +50,6 @@ func (p Protocol) Reply(w *bufio.Writer, k, v []byte) {
 	w.WriteString("\r\n")
 }
 
-func (p Protocol) Finish(w *bufio.Writer) {
+func Finish(w *bufio.Writer) {
 	w.WriteString("END\r\n")
 }

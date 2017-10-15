@@ -1,6 +1,6 @@
 BINARY = romdb
 CIDFILE = .romdb-cid
-DB_FILES = data/sample-bdb.db
+DB_FILES = data/sample-bdb.db data/sample-memcachedb-bdb.db
 
 all: dep $(DB_FILES) $(BINARY)
 
@@ -11,7 +11,10 @@ test: $(DB_FILES)
 	go test ./...
 
 data/sample-bdb.db: data/sample-data.json
-	go run ./cmd/sample_bdb_data.go -input-from $< -output-to $@
+	go run ./cmd/sample-data/bdb/bdb.go -input-from $< -output-to $@
+
+data/sample-memcachedb-bdb.db: data/sample-data.json
+	go run ./cmd/sample-data/memcachedb-bdb/memcachedb-bdb.go -input-from $< -output-to $@
 
 bench:
 	go test -bench .
