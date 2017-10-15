@@ -4,6 +4,8 @@ import (
 	"flag"
 	"fmt"
 
+	"github.com/yowcow/go-romdb/protocol"
+	"github.com/yowcow/go-romdb/protocol/memcachedbprotocol"
 	"github.com/yowcow/go-romdb/protocol/memcachedprotocol"
 	"github.com/yowcow/go-romdb/server"
 	"github.com/yowcow/go-romdb/store"
@@ -13,15 +15,17 @@ import (
 
 func main() {
 	var addr string
+	var protoBackend string
 	var storeBackend string
 	var file string
 
 	flag.StringVar(&addr, "addr", ":11211", "Address to bind to")
-	flag.StringVar(&storeBackend, "store", "bdb", "Store type: json, bdb")
+	flag.StringVar(&protoBackend, "proto", "memcached", "Protocol: memcached, memcachedb")
+	flag.StringVar(&storeBackend, "store", "bdb", "Store: json, bdb")
 	flag.StringVar(&file, "file", "./data/sample-bdb.db", "Data file")
 	flag.Parse()
 
-	proto, err := memcachedprotocol.New()
+	proto, err := createProtocol(protoBackend)
 
 	if err != nil {
 		panic(err)
@@ -35,6 +39,17 @@ func main() {
 
 	s := server.New("tcp", addr, proto, store)
 	s.Start()
+}
+
+func createProtocol(protoBackend string) (protocol.Protocol, error) {
+	switch protoBackend {
+	case "memcached":
+		return memcachedprotocol.New()
+	case "memcachedb":
+		return memcachedbprotocol.New()
+	default:
+		return nil, fmt.Errorf("don't know how to handle protoc '%s'", protoBackend)
+	}
 }
 
 func createStore(storeBackend, file string) (store.Store, error) {

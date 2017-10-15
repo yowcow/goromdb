@@ -8,27 +8,39 @@ import (
 	"github.com/yowcow/go-romdb/protocol"
 )
 
-var prefixes = [][]byte{[]byte("gets "), []byte("get ")}
-var space = []byte(" ")
+var Prefixes = [][]byte{[]byte("gets "), []byte("get ")}
+var Space = []byte(" ")
 
-type MemcachedProtocol struct {
+type Protocol struct {
 }
 
 func New() (protocol.Protocol, error) {
-	return &MemcachedProtocol{}, nil
+	return &Protocol{}, nil
 }
 
-func (p MemcachedProtocol) Parse(line []byte) ([][]byte, error) {
-	for _, prefix := range prefixes {
+func (p Protocol) Parse(line []byte) ([][]byte, error) {
+	return Parse(line)
+}
+
+func (p Protocol) Reply(w *bufio.Writer, k, v []byte) {
+	Reply(w, k, v)
+}
+
+func (p Protocol) Finish(w *bufio.Writer) {
+	Finish(w)
+}
+
+func Parse(line []byte) ([][]byte, error) {
+	for _, prefix := range Prefixes {
 		if bytes.HasPrefix(line, prefix) {
-			words := bytes.Split(line, space)
+			words := bytes.Split(line, Space)
 			return words[1:], nil
 		}
 	}
 	return [][]byte{}, protocol.InvalidCommandError(line)
 }
 
-func (p MemcachedProtocol) Reply(w *bufio.Writer, k, v []byte) {
+func Reply(w *bufio.Writer, k, v []byte) {
 	w.WriteString("VALUE ")
 	w.Write(k)
 	w.WriteString(" 0 ")
@@ -38,6 +50,6 @@ func (p MemcachedProtocol) Reply(w *bufio.Writer, k, v []byte) {
 	w.WriteString("\r\n")
 }
 
-func (p MemcachedProtocol) Finish(w *bufio.Writer) {
+func Finish(w *bufio.Writer) {
 	w.WriteString("END\r\n")
 }
