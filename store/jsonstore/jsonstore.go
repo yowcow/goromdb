@@ -109,11 +109,11 @@ func (s Store) startDataLoader(boot chan<- bool, dataOut chan<- Data) {
 	}
 }
 
-func (s Store) Get(key string) (string, error) {
-	if v, ok := s.data[key]; ok {
-		return v, nil
+func (s Store) Get(key []byte) ([]byte, error) {
+	if v, ok := s.data[string(key)]; ok {
+		return []byte(v), nil
 	}
-	return "", store.KeyNotFoundError(key)
+	return nil, store.KeyNotFoundError(key)
 }
 
 func (s Store) Shutdown() error {

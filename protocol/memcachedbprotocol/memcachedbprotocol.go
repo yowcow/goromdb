@@ -25,8 +25,8 @@ func (p Protocol) Parse(line []byte) ([][]byte, error) {
 	return [][]byte{}, protocol.InvalidCommandError(line)
 }
 
-func (p Protocol) Reply(w *bufio.Writer, key string, data string) {
-	w.WriteString(data)
+func (p Protocol) Reply(w *bufio.Writer, k, v []byte) {
+	w.Write(v)
 }
 
 func (p Protocol) Finish(w *bufio.Writer) {

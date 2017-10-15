@@ -34,10 +34,10 @@ func (p TestProtocol) Parse(line []byte) ([][]byte, error) {
 	return [][]byte{}, fmt.Errorf("invalid command")
 }
 
-func (p TestProtocol) Reply(w *bufio.Writer, key, value string) {
-	w.WriteString(key)
+func (p TestProtocol) Reply(w *bufio.Writer, key, value []byte) {
+	w.Write(key)
 	w.WriteRune(' ')
-	w.WriteString(value)
+	w.Write(value)
 	w.WriteString("\r\n")
 }
 
@@ -61,11 +61,11 @@ func createTestStore() store.Store {
 	return &TestStore{data, logger}
 }
 
-func (s TestStore) Get(key string) (string, error) {
-	if v, ok := s.data[key]; ok {
-		return v, nil
+func (s TestStore) Get(key []byte) ([]byte, error) {
+	if v, ok := s.data[string(key)]; ok {
+		return []byte(v), nil
 	}
-	return "", store.KeyNotFoundError(key)
+	return nil, store.KeyNotFoundError(key)
 }
 
 func (s TestStore) Shutdown() error {

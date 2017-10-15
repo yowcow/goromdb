@@ -118,15 +118,15 @@ func (s Store) startDataLoader(boot chan<- bool, dbOut chan<- *bdb.BerkeleyDB) {
 	}
 }
 
-func (s Store) Get(key string) (string, error) {
+func (s Store) Get(key []byte) ([]byte, error) {
 	if s.db != nil {
-		if v, err := s.db.Get(bdb.NoTxn, []byte(key), 0); err == nil {
-			return string(v), nil
+		if v, err := s.db.Get(bdb.NoTxn, key, 0); err == nil {
+			return v, nil
 		} else {
-			return "", err
+			return nil, err
 		}
 	}
-	return "", store.KeyNotFoundError(key)
+	return nil, store.KeyNotFoundError(key)
 }
 
 func (s Store) Shutdown() error {

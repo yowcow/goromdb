@@ -4,7 +4,7 @@ import (
 	"github.com/yowcow/go-romdb/store"
 )
 
-type Data map[string]string
+type Data map[string][]byte
 
 type StoreTest struct {
 	data Data
@@ -12,17 +12,17 @@ type StoreTest struct {
 
 func New() (store.Store, error) {
 	data := Data{
-		"foo": "my test foo",
-		"bar": "my test bar!!",
+		"foo": []byte("my test foo"),
+		"bar": []byte("my test bar!!"),
 	}
 	return &StoreTest{data}, nil
 }
 
-func (s StoreTest) Get(key string) (string, error) {
-	if v, ok := s.data[key]; ok {
+func (s StoreTest) Get(key []byte) ([]byte, error) {
+	if v, ok := s.data[string(key)]; ok {
 		return v, nil
 	}
-	return "", store.KeyNotFoundError(key)
+	return nil, store.KeyNotFoundError(key)
 }
 
 func (s StoreTest) Shutdown() error {
