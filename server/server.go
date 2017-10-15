@@ -92,14 +92,14 @@ func (s Server) handleConn(conn net.Conn) {
 		}
 
 		if keys, err := s.protocol.Parse(line); err != nil {
-			s.logger.Print("-> protocol error:", err)
+			s.logger.Print("-> protocol error: ", err)
 		} else {
 			for _, k := range keys {
 				key := string(k)
 				if v, err := s.store.Get(key); err == nil {
 					s.protocol.Reply(w, key, v)
 				} else {
-					s.logger.Print("-> get error:", err)
+					s.logger.Print("-> store error: ", err)
 				}
 			}
 		}
