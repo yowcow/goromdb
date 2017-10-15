@@ -52,7 +52,7 @@ func TestNewWatcher(t *testing.T) {
 }
 
 func TestKeyNotFoundError(t *testing.T) {
-	err := KeyNotFoundError("hogefuga")
+	err := KeyNotFoundError([]byte("hogefuga"))
 
 	assert.NotNil(t, err)
 	assert.Equal(t, err.Error(), "key 'hogefuga' not found")

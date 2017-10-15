@@ -46,7 +46,7 @@ func TestReply(t *testing.T) {
 	w := bufio.NewWriter(buf)
 
 	p, _ := New()
-	p.Reply(w, "hoge", "hogefuga")
+	p.Reply(w, []byte("hoge"), []byte("hogefuga"))
 	err := w.Flush()
 
 	assert.Nil(t, err)

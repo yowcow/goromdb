@@ -17,18 +17,18 @@ func TestNew(t *testing.T) {
 
 func TestGet_on_existing_key(t *testing.T) {
 	store, _ := New(sampleDBFile)
-	val, err := store.Get("fuga")
+	val, err := store.Get([]byte("fuga"))
 
 	assert.Nil(t, err)
-	assert.Equal(t, "fuga!!", val)
+	assert.Equal(t, "fuga!!", string(val))
 	assert.Nil(t, store.Shutdown())
 }
 
 func TestGet_on_non_existing_key(t *testing.T) {
 	store, _ := New(sampleDBFile)
-	val, err := store.Get("hogefuga")
+	val, err := store.Get([]byte("hogefuga"))
 
-	assert.Equal(t, "", val)
+	assert.Nil(t, val)
 	assert.NotNil(t, err)
 	assert.Nil(t, store.Shutdown())
 }
