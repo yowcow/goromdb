@@ -32,6 +32,7 @@ func (p Protocol) Reply(w *bufio.Writer, k, v []byte) {
 	key, val, len, err := Deserialize(r)
 	if err != nil {
 		p.logger.Print("-> deserialization failed: ", err)
+		return
 	}
 
 	w.WriteString("VALUE ")
