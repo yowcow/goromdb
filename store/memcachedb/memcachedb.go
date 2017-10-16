@@ -1,50 +1,11 @@
-package memcachedbprotocol
+package memcachedb
 
 import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
 	"io"
-	"log"
-	"os"
-
-	"github.com/yowcow/go-romdb/protocol"
-	"github.com/yowcow/go-romdb/protocol/memcachedprotocol"
 )
-
-type Protocol struct {
-	logger *log.Logger
-}
-
-func New() (protocol.Protocol, error) {
-	logger := log.New(os.Stdout, "", log.LstdFlags|log.Lshortfile)
-	return &Protocol{logger}, nil
-}
-
-func (p Protocol) Parse(line []byte) ([][]byte, error) {
-	return memcachedprotocol.Parse(line)
-}
-
-func (p Protocol) Reply(w io.Writer, k, v []byte) {
-	r := bytes.NewReader(v)
-	_, val, len, err := Deserialize(r)
-	if err != nil {
-		p.logger.Print("-> deserialization failed: ", err)
-		return
-	}
-
-	fmt.Fprintf(
-		w,
-		"VALUE %s 0 %d\r\n%s\r\n",
-		string(k),
-		len,
-		string(val),
-	)
-}
-
-func (p Protocol) Finish(w io.Writer) {
-	memcachedprotocol.Finish(w)
-}
 
 const _Zero uint8 = 0
 
