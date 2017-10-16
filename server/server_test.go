@@ -3,6 +3,7 @@ package server
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"os"
@@ -34,15 +35,15 @@ func (p TestProtocol) Parse(line []byte) ([][]byte, error) {
 	return [][]byte{}, fmt.Errorf("invalid command")
 }
 
-func (p TestProtocol) Reply(w *bufio.Writer, key, value []byte) {
+func (p TestProtocol) Reply(w io.Writer, key, value []byte) {
 	w.Write(key)
-	w.WriteRune(' ')
+	w.Write([]byte(" "))
 	w.Write(value)
-	w.WriteString("\r\n")
+	w.Write([]byte("\r\n"))
 }
 
-func (p TestProtocol) Finish(w *bufio.Writer) {
-	w.WriteString("BYE\r\n")
+func (p TestProtocol) Finish(w io.Writer) {
+	w.Write([]byte("BYE\r\n"))
 }
 
 type TestData map[string]string
@@ -110,8 +111,8 @@ func TestServer(t *testing.T) {
 	assert.Nil(t, err)
 
 	var output []byte
-	w := bufio.NewWriter(conn)
 	r := bufio.NewReader(conn)
+	w := bufio.NewWriter(conn)
 
 	for _, c := range cases {
 		w.WriteString(c.input)

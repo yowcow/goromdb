@@ -1,9 +1,9 @@
 package memcachedprotocol
 
 import (
-	"bufio"
 	"bytes"
-	"strconv"
+	"fmt"
+	"io"
 
 	"github.com/yowcow/go-romdb/protocol"
 )
@@ -22,11 +22,11 @@ func (p Protocol) Parse(line []byte) ([][]byte, error) {
 	return Parse(line)
 }
 
-func (p Protocol) Reply(w *bufio.Writer, k, v []byte) {
+func (p Protocol) Reply(w io.Writer, k, v []byte) {
 	Reply(w, k, v)
 }
 
-func (p Protocol) Finish(w *bufio.Writer) {
+func (p Protocol) Finish(w io.Writer) {
 	Finish(w)
 }
 
@@ -40,16 +40,16 @@ func Parse(line []byte) ([][]byte, error) {
 	return [][]byte{}, protocol.InvalidCommandError(line)
 }
 
-func Reply(w *bufio.Writer, k, v []byte) {
-	w.WriteString("VALUE ")
-	w.Write(k)
-	w.WriteString(" 0 ")
-	w.WriteString(strconv.Itoa(len(v)))
-	w.WriteString("\r\n")
-	w.Write(v)
-	w.WriteString("\r\n")
+func Reply(w io.Writer, k, v []byte) {
+	fmt.Fprintf(
+		w,
+		"VALUE %s 0 %d\r\n%s\r\n",
+		string(k),
+		len(v),
+		string(v),
+	)
 }
 
-func Finish(w *bufio.Writer) {
-	w.WriteString("END\r\n")
+func Finish(w io.Writer) {
+	fmt.Fprint(w, "END\r\n")
 }

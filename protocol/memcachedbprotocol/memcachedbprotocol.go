@@ -1,14 +1,12 @@
 package memcachedbprotocol
 
 import (
-	"bufio"
 	"bytes"
 	"encoding/binary"
 	"fmt"
 	"io"
 	"log"
 	"os"
-	"strconv"
 
 	"github.com/yowcow/go-romdb/protocol"
 	"github.com/yowcow/go-romdb/protocol/memcachedprotocol"
@@ -27,24 +25,24 @@ func (p Protocol) Parse(line []byte) ([][]byte, error) {
 	return memcachedprotocol.Parse(line)
 }
 
-func (p Protocol) Reply(w *bufio.Writer, k, v []byte) {
+func (p Protocol) Reply(w io.Writer, k, v []byte) {
 	r := bytes.NewReader(v)
-	key, val, len, err := Deserialize(r)
+	_, val, len, err := Deserialize(r)
 	if err != nil {
 		p.logger.Print("-> deserialization failed: ", err)
 		return
 	}
 
-	w.WriteString("VALUE ")
-	w.Write(key)
-	w.WriteString(" 0 ")
-	w.WriteString(strconv.Itoa(len))
-	w.WriteString("\r\n")
-	w.Write(val)
-	w.WriteString("\r\n")
+	fmt.Fprintf(
+		w,
+		"VALUE %s 0 %d\r\n%s\r\n",
+		string(k),
+		len,
+		string(val),
+	)
 }
 
-func (p Protocol) Finish(w *bufio.Writer) {
+func (p Protocol) Finish(w io.Writer) {
 	memcachedprotocol.Finish(w)
 }
 
