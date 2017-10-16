@@ -96,8 +96,6 @@ func (s Server) handleConn(conn net.Conn) {
 			for _, k := range keys {
 				if v, err := s.store.Get(k); err == nil {
 					s.protocol.Reply(conn, k, v)
-				} else {
-					s.logger.Print("-> store error: ", err)
 				}
 			}
 		}
