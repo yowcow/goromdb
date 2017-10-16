@@ -81,7 +81,6 @@ func (s Server) handleConn(conn net.Conn) {
 	defer conn.Close()
 
 	r := bufio.NewReader(conn)
-	w := bufio.NewWriter(conn)
 
 	for {
 		line, _, err := r.ReadLine()
@@ -96,14 +95,13 @@ func (s Server) handleConn(conn net.Conn) {
 		} else {
 			for _, k := range keys {
 				if v, err := s.store.Get(k); err == nil {
-					s.protocol.Reply(w, k, v)
+					s.protocol.Reply(conn, k, v)
 				} else {
 					s.logger.Print("-> store error: ", err)
 				}
 			}
 		}
 
-		s.protocol.Finish(w)
-		w.Flush()
+		s.protocol.Finish(conn)
 	}
 }

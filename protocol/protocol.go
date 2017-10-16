@@ -1,14 +1,14 @@
 package protocol
 
 import (
-	"bufio"
 	"fmt"
+	"io"
 )
 
 type Protocol interface {
 	Parse([]byte) ([][]byte, error)
-	Reply(*bufio.Writer, []byte, []byte)
-	Finish(*bufio.Writer)
+	Reply(io.Writer, []byte, []byte)
+	Finish(io.Writer)
 }
 
 func InvalidCommandError(line []byte) error {
