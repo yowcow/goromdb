@@ -61,7 +61,7 @@ func (s *Store) startDataNode(boot chan<- bool, dbIn <-chan *bdb.BerkeleyDB) {
 	}
 
 	boot <- true
-	s.logger.Print("-> datanode started!")
+	s.logger.Print("-> data node started!")
 
 	for {
 		select {
