@@ -7,7 +7,7 @@ import (
 	"io/ioutil"
 
 	"github.com/ajiyoshi-vg/goberkeleydb/bdb"
-	"github.com/yowcow/go-romdb/protocol/memcachedbprotocol"
+	"github.com/yowcow/go-romdb/store/memcachedb"
 )
 
 type Data map[string]string
@@ -43,7 +43,7 @@ func writeDB(jsonFile, dbFile string) {
 
 	for k, v := range data {
 		data := new(bytes.Buffer)
-		err := memcachedbprotocol.Serialize(data, []byte(k), []byte(v))
+		err := memcachedb.Serialize(data, []byte(k), []byte(v))
 		if err != nil {
 			panic(err)
 		}
