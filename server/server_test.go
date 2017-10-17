@@ -2,11 +2,12 @@ package server
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"io"
 	"log"
 	"net"
-	"os"
+	"regexp"
 	"testing"
 	"time"
 
@@ -53,12 +54,11 @@ type TestStore struct {
 	logger *log.Logger
 }
 
-func createTestStore() store.Store {
+func createTestStore(logger *log.Logger) store.Store {
 	data := TestData{
 		"foo": "foo!",
 		"bar": "bar!!",
 	}
-	logger := log.New(os.Stdout, "", log.LstdFlags|log.Lshortfile)
 	return &TestStore{data, logger}
 }
 
@@ -97,9 +97,11 @@ func TestServer(t *testing.T) {
 		},
 	}
 
+	buf := new(bytes.Buffer)
+	l := log.New(buf, "", log.Lshortfile)
 	p := createTestProtocol()
-	s := createTestStore()
-	server := New("tcp", ":11222", p, s)
+	s := createTestStore(l)
+	server := New("tcp", ":11222", p, s, l)
 
 	go func() {
 		server.Start()
@@ -128,4 +130,8 @@ func TestServer(t *testing.T) {
 
 	assert.Nil(t, conn.Close())
 	assert.Nil(t, server.Shutdown())
+
+	re := regexp.MustCompile("parse error: invalid command")
+
+	assert.True(t, re.Match(buf.Bytes()))
 }

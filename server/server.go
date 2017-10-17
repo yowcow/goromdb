@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"log"
 	"net"
-	"os"
 	"sync"
 
 	"github.com/yowcow/go-romdb/protocol"
@@ -23,10 +22,9 @@ type Server struct {
 	logger *log.Logger
 }
 
-func New(proto, addr string, protocol protocol.Protocol, store store.Store) *Server {
+func New(proto, addr string, protocol protocol.Protocol, store store.Store, logger *log.Logger) *Server {
 	quit := make(chan bool)
 	wg := &sync.WaitGroup{}
-	logger := log.New(os.Stdout, "", log.LstdFlags|log.Lshortfile)
 	return &Server{proto, addr, protocol, store, quit, wg, logger}
 }
 
@@ -91,7 +89,7 @@ func (s Server) handleConn(conn net.Conn) {
 		}
 
 		if keys, err := s.protocol.Parse(line); err != nil {
-			s.logger.Print("-> protocol error: ", err)
+			s.logger.Print("-> parse error: ", err)
 		} else {
 			for _, k := range keys {
 				if v, err := s.store.Get(k); err == nil {

@@ -2,7 +2,6 @@ package bdbstore
 
 import (
 	"log"
-	"os"
 	"sync"
 	"time"
 
@@ -25,9 +24,8 @@ type Store struct {
 	dataLoaderWg   *sync.WaitGroup
 }
 
-func New(file string) (store.Store, error) {
+func New(file string, logger *log.Logger) store.Store {
 	var data Data
-	logger := log.New(os.Stdout, "", log.LstdFlags|log.Lshortfile)
 	dbUpdate := make(chan *bdb.BerkeleyDB)
 
 	dataNodeQuit := make(chan bool)
@@ -50,7 +48,7 @@ func New(file string) (store.Store, error) {
 
 	close(boot)
 
-	return s, nil
+	return s
 }
 
 func (s *Store) startDataNode(boot chan<- bool, dbIn <-chan *bdb.BerkeleyDB) {
@@ -58,6 +56,8 @@ func (s *Store) startDataNode(boot chan<- bool, dbIn <-chan *bdb.BerkeleyDB) {
 
 	if db, err := OpenBDB(s.file); err == nil {
 		s.db = db
+	} else {
+		s.logger.Print(err)
 	}
 
 	boot <- true

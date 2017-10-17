@@ -1,6 +1,9 @@
 package jsonstore
 
 import (
+	"bytes"
+	"log"
+	"regexp"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -19,27 +22,53 @@ func TestLoadJSON_returns_error_on_invalid_JSON(t *testing.T) {
 }
 
 func TestNew(t *testing.T) {
-	store, err := New("./jsonstore-data.json")
-	store.Shutdown()
+	buf := new(bytes.Buffer)
+	logger := log.New(buf, "", log.Lshortfile)
+
+	store := New("./jsonstore-data.json", logger)
+
+	assert.NotNil(t, store)
+
+	assert.Nil(t, store.Shutdown())
+}
+
+func TestNew_with_non_existing_file(t *testing.T) {
+	buf := new(bytes.Buffer)
+	logger := log.New(buf, "", log.Lshortfile)
+
+	store := New("./jsonstore-hogefuga.json", logger)
+
+	assert.NotNil(t, store)
+
+	assert.Nil(t, store.Shutdown())
+
+	re := regexp.MustCompile("no such file or directory")
+	logline, err := buf.ReadString('\n')
 
 	assert.Nil(t, err)
+	assert.True(t, re.MatchString(logline))
 }
 
 func TestGet_on_existing_key(t *testing.T) {
-	store, _ := New("./jsonstore-data.json")
+	buf := new(bytes.Buffer)
+	logger := log.New(buf, "", log.Lshortfile)
+
+	store := New("./jsonstore-data.json", logger)
 	value, err := store.Get([]byte("hoge"))
 
 	assert.Nil(t, err)
 	assert.Equal(t, "hoge!!!", string(value))
-
-	store.Shutdown()
+	assert.Nil(t, store.Shutdown())
 }
 
 func TestGet_on_non_existing_key(t *testing.T) {
-	store, _ := New("./jsonstore-data.json")
+	buf := new(bytes.Buffer)
+	logger := log.New(buf, "", log.Lshortfile)
+
+	store := New("./jsonstore-data.json", logger)
 	value, err := store.Get([]byte("foobar"))
-	store.Shutdown()
 
 	assert.Nil(t, value)
 	assert.NotNil(t, err)
+	assert.Nil(t, store.Shutdown())
 }

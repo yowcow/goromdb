@@ -8,23 +8,17 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNew(t *testing.T) {
-	_, err := New()
-
-	assert.Nil(t, err)
-}
-
 func TestParse_on_get_command(t *testing.T) {
-	p, _ := New()
+	p := New()
 	words, err := p.Parse([]byte("get hoge"))
 
-	assert.Nil(t, err)
 	assert.Equal(t, 1, len(words))
 	assert.Equal(t, []byte("hoge"), words[0])
+	assert.Nil(t, err)
 }
 
 func TestParse_on_gets_command(t *testing.T) {
-	p, _ := New()
+	p := New()
 	words, err := p.Parse([]byte("gets hoge fuga"))
 
 	assert.Nil(t, err)
@@ -34,7 +28,7 @@ func TestParse_on_gets_command(t *testing.T) {
 }
 
 func TestParse_on_invalid_command(t *testing.T) {
-	p, _ := New()
+	p := New()
 	words, err := p.Parse([]byte("set hoge fuga foo bar"))
 
 	assert.Equal(t, "invalid command: set hoge fuga foo bar", err.Error())
@@ -45,7 +39,7 @@ func TestReply(t *testing.T) {
 	buf := new(bytes.Buffer)
 	w := bufio.NewWriter(buf)
 
-	p, _ := New()
+	p := New()
 	p.Reply(w, []byte("hoge"), []byte("hogefuga"))
 	err := w.Flush()
 
@@ -57,7 +51,7 @@ func TestFinish(t *testing.T) {
 	buf := new(bytes.Buffer)
 	w := bufio.NewWriter(buf)
 
-	p, _ := New()
+	p := New()
 	p.Finish(w)
 	err := w.Flush()
 
