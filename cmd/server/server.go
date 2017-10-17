@@ -3,6 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
+	"os"
 
 	"github.com/yowcow/go-romdb/protocol"
 	"github.com/yowcow/go-romdb/protocol/memcachedprotocol"
@@ -25,39 +27,39 @@ func main() {
 	flag.StringVar(&file, "file", "./data/sample-bdb.db", "Data file")
 	flag.Parse()
 
+	logger := log.New(os.Stdout, "", log.LstdFlags|log.Lshortfile)
+
 	proto, err := createProtocol(protoBackend)
-
 	if err != nil {
 		panic(err)
 	}
 
-	store, err := createStore(storeBackend, file)
-
+	store, err := createStore(storeBackend, file, logger)
 	if err != nil {
 		panic(err)
 	}
 
-	s := server.New("tcp", addr, proto, store)
+	s := server.New("tcp", addr, proto, store, logger)
 	s.Start()
 }
 
 func createProtocol(protoBackend string) (protocol.Protocol, error) {
 	switch protoBackend {
 	case "memcached":
-		return memcachedprotocol.New()
+		return memcachedprotocol.New(), nil
 	default:
 		return nil, fmt.Errorf("don't know how to handle protoc '%s'", protoBackend)
 	}
 }
 
-func createStore(storeBackend, file string) (store.Store, error) {
+func createStore(storeBackend, file string, logger *log.Logger) (store.Store, error) {
 	switch storeBackend {
 	case "bdb":
-		return bdbstore.New(file)
+		return bdbstore.New(file, logger), nil
 	case "json":
-		return jsonstore.New(file)
+		return jsonstore.New(file, logger), nil
 	case "memcachedb-bdb":
-		return memcachedb_bdb.New(file)
+		return memcachedb_bdb.New(file, logger), nil
 	default:
 		return nil, fmt.Errorf("don't know how to handle store '%s'", storeBackend)
 	}

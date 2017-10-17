@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"log"
-	"os"
 	"sync"
 	"time"
 
@@ -25,9 +24,8 @@ type Store struct {
 	dataLoaderWg   *sync.WaitGroup
 }
 
-func New(file string) (store.Store, error) {
+func New(file string, logger *log.Logger) store.Store {
 	var data Data
-	logger := log.New(os.Stdout, "", log.LstdFlags|log.Lshortfile)
 	dataUpdate := make(chan Data)
 
 	dataNodeQuit := make(chan bool)
@@ -50,7 +48,7 @@ func New(file string) (store.Store, error) {
 
 	close(boot)
 
-	return s, nil
+	return s
 }
 
 func (s *Store) startDataNode(boot chan<- bool, dataIn <-chan Data) {
@@ -58,6 +56,8 @@ func (s *Store) startDataNode(boot chan<- bool, dataIn <-chan Data) {
 
 	if data, err := LoadJSON(s.file); err == nil {
 		s.data = data
+	} else {
+		s.logger.Print(err)
 	}
 
 	boot <- true

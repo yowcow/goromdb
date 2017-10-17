@@ -14,8 +14,8 @@ var Space = []byte(" ")
 type Protocol struct {
 }
 
-func New() (protocol.Protocol, error) {
-	return &Protocol{}, nil
+func New() protocol.Protocol {
+	return &Protocol{}
 }
 
 func (p Protocol) Parse(line []byte) ([][]byte, error) {
