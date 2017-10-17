@@ -10,8 +10,8 @@ romdb:
     - -addr
     - ":11211"
     - -store
-    - bdb
+    - memcachedb-bdb
     - -file
-    - data/sample-bdb.db
+    - data/sample-memcachedb-bdb.db
   ports:
     - "11224:11211"

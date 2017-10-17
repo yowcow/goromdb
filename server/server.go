@@ -61,12 +61,12 @@ func (s Server) Start() error {
 	}(ln, nc)
 
 	s.wg.Add(1)
-	s.logger.Print("server listening on port: ", s.addr)
+	s.logger.Print("server now listening to addr: ", s.addr)
 
 	for {
 		select {
 		case conn := <-nc:
-			s.logger.Print("-> accepted a new conn")
+			s.logger.Print("-> server accepted a new conn")
 			go s.handleConn(conn)
 		case <-s.quit:
 			s.logger.Print("-> server shutting down")
