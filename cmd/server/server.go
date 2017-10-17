@@ -39,6 +39,13 @@ func main() {
 		panic(err)
 	}
 
+	logger.Print(
+		fmt.Sprintf(
+			"Booting romdb server listening to address %s that talks %s protocol, with backend store %s at file path %s",
+			addr, protoBackend, storeBackend, file,
+		),
+	)
+
 	s := server.New("tcp", addr, proto, store, logger)
 	s.Start()
 }

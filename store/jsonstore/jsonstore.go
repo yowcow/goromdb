@@ -34,7 +34,15 @@ func New(file string, logger *log.Logger) store.Store {
 	dataLoaderQuit := make(chan bool)
 	dataLoaderWg := &sync.WaitGroup{}
 
-	s := &Store{file, data, logger, dataNodeQuit, dataNodeWg, dataLoaderQuit, dataLoaderWg}
+	s := &Store{
+		file,
+		data,
+		logger,
+		dataNodeQuit,
+		dataNodeWg,
+		dataLoaderQuit,
+		dataLoaderWg,
+	}
 
 	boot := make(chan bool)
 
