@@ -25,7 +25,15 @@ type Server struct {
 func New(proto, addr string, protocol protocol.Protocol, store store.Store, logger *log.Logger) *Server {
 	quit := make(chan bool)
 	wg := &sync.WaitGroup{}
-	return &Server{proto, addr, protocol, store, quit, wg, logger}
+	return &Server{
+		proto,
+		addr,
+		protocol,
+		store,
+		quit,
+		wg,
+		logger,
+	}
 }
 
 func (s Server) Start() error {
@@ -92,7 +100,7 @@ func (s Server) handleConn(conn net.Conn) {
 			s.logger.Print("-> parse error: ", err)
 		} else {
 			for _, k := range keys {
-				if v, err := s.store.Get(k); err == nil {
+				if v, _ := s.store.Get(k); v != nil {
 					s.protocol.Reply(conn, k, v)
 				}
 			}

@@ -9,7 +9,7 @@ import (
 	"github.com/yowcow/go-romdb/store"
 )
 
-type Data map[string]string
+type Data map[string][]byte
 
 type Store struct {
 	file   string
@@ -25,7 +25,7 @@ type Store struct {
 }
 
 func New(file string, logger *log.Logger) store.Store {
-	var data Data
+	data := make(Data)
 	dbUpdate := make(chan *bdb.BerkeleyDB)
 
 	dataNodeQuit := make(chan bool)
@@ -34,7 +34,16 @@ func New(file string, logger *log.Logger) store.Store {
 	dataLoaderQuit := make(chan bool)
 	dataLoaderWg := &sync.WaitGroup{}
 
-	s := &Store{file, data, nil, logger, dataNodeQuit, dataNodeWg, dataLoaderQuit, dataLoaderWg}
+	s := &Store{
+		file:           file,
+		data:           data,
+		db:             nil,
+		logger:         logger,
+		dataNodeQuit:   dataNodeQuit,
+		dataNodeWg:     dataNodeWg,
+		dataLoaderQuit: dataLoaderQuit,
+		dataLoaderWg:   dataLoaderWg,
+	}
 
 	boot := make(chan bool)
 
@@ -72,6 +81,7 @@ func (s *Store) startDataNode(boot chan<- bool, dbIn <-chan *bdb.BerkeleyDB) {
 				oldDB.Close(0)
 				oldDB = nil
 			}
+			s.data = make(Data)
 			s.logger.Print("-> data node updated!")
 		case <-s.dataNodeQuit:
 			if s.db != nil {
@@ -119,11 +129,16 @@ func (s Store) startDataLoader(boot chan<- bool, dbOut chan<- *bdb.BerkeleyDB) {
 }
 
 func (s Store) Get(key []byte) ([]byte, error) {
-	if s.db != nil {
+	k := string(key)
+	if v, ok := s.data[k]; ok {
+		return v, nil
+	} else if s.db != nil {
 		v, err := s.db.Get(bdb.NoTxn, key, 0)
 		if err != nil {
+			s.data[k] = nil
 			return nil, err
 		}
+		s.data[k] = v
 		return v, nil
 	}
 	return nil, store.KeyNotFoundError(key)

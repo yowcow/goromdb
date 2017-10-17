@@ -16,7 +16,10 @@ type Store struct {
 
 func New(file string, logger *log.Logger) store.Store {
 	proxy := bdb.New(file, logger)
-	s := &Store{proxy, logger}
+	s := &Store{
+		proxy,
+		logger,
+	}
 	return s
 }
 
