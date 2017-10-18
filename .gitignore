@@ -1,6 +1,6 @@
 /.romdb-cid
 /Gopkg.lock
-/data/sample-bdb.db
-/data/sample-memcachedb-bdb.db
+/data/*.db
+/data/*.md5
 /romdb
 /vendor
