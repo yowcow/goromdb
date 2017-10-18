@@ -1,8 +1,8 @@
 BINARY = romdb
 CIDFILE = .romdb-cid
 
-MD5_FILES = data/sample-data.json.md5 data/sample-bdb.db.md5 data/sample-memcachedb-bdb.db.md5
 DB_FILES = data/sample-bdb.db data/sample-memcachedb-bdb.db
+MD5_FILES = data/sample-data.json.md5 $(foreach file,$(DB_FILES),$(file).md5)
 
 all: dep $(DB_FILES) $(MD5_FILES) $(BINARY)
 
