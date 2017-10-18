@@ -64,9 +64,13 @@ func (s *Store) startDataNode(boot chan<- bool, dbIn <-chan *bdb.BerkeleyDB) {
 	defer s.dataNodeWg.Done()
 
 	if db, err := OpenBDB(s.file); err == nil {
-		s.db = db
+		if err = store.CheckMD5Sum(s.file, s.file+".md5"); err != nil {
+			s.logger.Print("-> data node failed checking MD5 sum: ", err)
+		} else {
+			s.db = db
+		}
 	} else {
-		s.logger.Print(err)
+		s.logger.Print("-> data node failed reading data from file: ", err)
 	}
 
 	boot <- true
@@ -103,7 +107,7 @@ func (s Store) startDataLoader(boot chan<- bool, dbOut chan<- *bdb.BerkeleyDB) {
 	wg := &sync.WaitGroup{}
 
 	wg.Add(1)
-	go store.NewWatcher(d, s.file, s.logger, update, quit, wg)
+	go store.NewWatcher(d, s.file, s.logger, update, quit, wg, store.CheckMD5Sum)
 
 	boot <- true
 	s.logger.Print("-> data loader started!")

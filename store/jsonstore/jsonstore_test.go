@@ -9,6 +9,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var sampleDBFile = "../../data/sample-data.json"
+
 func TestLoadJSON_returns_error_on_non_existing_file(t *testing.T) {
 	_, err := LoadJSON("./hoge/fuga")
 
@@ -25,7 +27,7 @@ func TestNew(t *testing.T) {
 	buf := new(bytes.Buffer)
 	logger := log.New(buf, "", log.Lshortfile)
 
-	store := New("./jsonstore-data.json", logger)
+	store := New(sampleDBFile, logger)
 
 	assert.NotNil(t, store)
 
@@ -53,11 +55,11 @@ func TestGet_on_existing_key(t *testing.T) {
 	buf := new(bytes.Buffer)
 	logger := log.New(buf, "", log.Lshortfile)
 
-	store := New("./jsonstore-data.json", logger)
+	store := New(sampleDBFile, logger)
 	value, err := store.Get([]byte("hoge"))
 
 	assert.Nil(t, err)
-	assert.Equal(t, "hoge!!!", string(value))
+	assert.Equal(t, "hoge!", string(value))
 	assert.Nil(t, store.Shutdown())
 }
 
@@ -65,7 +67,7 @@ func TestGet_on_non_existing_key(t *testing.T) {
 	buf := new(bytes.Buffer)
 	logger := log.New(buf, "", log.Lshortfile)
 
-	store := New("./jsonstore-data.json", logger)
+	store := New(sampleDBFile, logger)
 	value, err := store.Get([]byte("foobar"))
 
 	assert.Nil(t, value)

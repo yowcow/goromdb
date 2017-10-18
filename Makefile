@@ -1,14 +1,19 @@
 BINARY = romdb
 CIDFILE = .romdb-cid
-DB_FILES = data/sample-bdb.db data/sample-memcachedb-bdb.db
 
-all: dep $(DB_FILES) $(BINARY)
+DB_FILES = data/sample-bdb.db data/sample-memcachedb-bdb.db
+MD5_FILES = data/sample-data.json.md5 $(foreach file,$(DB_FILES),$(file).md5)
+
+all: dep $(DB_FILES) $(MD5_FILES) $(BINARY)
 
 dep:
 	dep ensure
 
-test: $(DB_FILES)
+test:
 	go test ./...
+
+data/%.md5: data/%
+	md5sum $< > $@
 
 data/sample-bdb.db: data/sample-data.json
 	go run ./cmd/sample-data/bdb/bdb.go -input-from $< -output-to $@
@@ -23,7 +28,7 @@ $(BINARY):
 	go build -o $@ ./cmd/server
 
 clean:
-	rm -rf $(BINARY) $(DB_FILES)
+	rm -rf $(BINARY) $(MD5_FILES) $(DB_FILES)
 
 realclean: clean
 	rm -rf vendor

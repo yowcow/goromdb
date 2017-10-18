@@ -1,7 +1,10 @@
 package store
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"sync"
@@ -13,10 +16,13 @@ type Store interface {
 	Shutdown() error
 }
 
-func NewWatcher(d time.Duration, file string, logger *log.Logger, update chan<- bool, quit <-chan bool, wg *sync.WaitGroup) {
+type ChecksumFunc func(string, string) error
+
+func NewWatcher(d time.Duration, file string, logger *log.Logger, update chan<- bool, quit <-chan bool, wg *sync.WaitGroup, checksum ChecksumFunc) {
 	defer wg.Done()
 
 	var lastModified time.Time
+	md5file := file + ".md5"
 
 	if fi, err := os.Stat(file); err == nil {
 		lastModified = fi.ModTime()
@@ -31,8 +37,12 @@ func NewWatcher(d time.Duration, file string, logger *log.Logger, update chan<- 
 		case <-t.C:
 			if fi, err := os.Stat(file); err == nil {
 				if fi.ModTime() != lastModified {
-					lastModified = fi.ModTime()
-					update <- true
+					if err = checksum(file, md5file); err == nil {
+						lastModified = fi.ModTime()
+						update <- true
+					} else {
+						logger.Print("-> watcher file MD5 check failed: ", err)
+					}
 				}
 			} else {
 				logger.Print("-> watcher file check failed: ", err)
@@ -46,6 +56,41 @@ func NewWatcher(d time.Duration, file string, logger *log.Logger, update chan<- 
 			return
 		}
 	}
+}
+
+func CheckMD5Sum(file, md5file string) error {
+	md5fh, err := os.Open(md5file)
+	if err != nil {
+		return err
+	}
+
+	fh, err := os.Open(file)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		fh.Close()
+		md5fh.Close()
+	}()
+
+	expectedMD5sum := make([]byte, 32)
+	_, err = md5fh.Read(expectedMD5sum)
+	if err != nil {
+		return err
+	}
+
+	h := md5.New()
+	if _, err := io.Copy(h, fh); err != nil {
+		return err
+	}
+
+	md5sum := hex.EncodeToString(h.Sum(nil))
+	if md5sum != string(expectedMD5sum) {
+		return fmt.Errorf("expecting MD5 sum '%s' but got '%s'", expectedMD5sum, md5sum)
+	}
+
+	return nil
 }
 
 func KeyNotFoundError(key []byte) error {
