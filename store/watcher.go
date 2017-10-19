@@ -36,14 +36,10 @@ func (w Watcher) Start(update chan<- bool, quit <-chan bool, wg *sync.WaitGroup)
 	timer := time.NewTimer(w.duration)
 	w.logger.Print("-> watcher started!")
 
-	if w.isFileModified() {
-		update <- true
-	}
-
 	for {
 		select {
 		case <-timer.C:
-			if w.isFileModified() {
+			if w.IsLoadable() {
 				update <- true
 			}
 			timer.Reset(w.duration)
@@ -57,7 +53,7 @@ func (w Watcher) Start(update chan<- bool, quit <-chan bool, wg *sync.WaitGroup)
 	}
 }
 
-func (w *Watcher) isFileModified() bool {
+func (w *Watcher) IsLoadable() bool {
 	if fi, err := os.Stat(w.file); err == nil {
 		if fi.ModTime() != w.lastModified {
 			if w.checksum == nil {
