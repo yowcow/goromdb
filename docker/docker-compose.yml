@@ -12,6 +12,6 @@ romdb:
     - -store
     - memcachedb-bdb
     - -file
-    - data/sample-memcachedb-bdb.db
+    - data/store/sample-memcachedb-bdb.db
   ports:
     - "11224:11211"
