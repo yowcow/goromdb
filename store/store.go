@@ -74,8 +74,8 @@ func CheckMD5Sum(file, md5file string) error {
 		md5fh.Close()
 	}()
 
-	expectedMD5sum := make([]byte, 32)
-	_, err = md5fh.Read(expectedMD5sum)
+	expected := make([]byte, 32)
+	_, err = md5fh.Read(expected)
 	if err != nil {
 		return err
 	}
@@ -86,8 +86,8 @@ func CheckMD5Sum(file, md5file string) error {
 	}
 
 	md5sum := hex.EncodeToString(h.Sum(nil))
-	if md5sum != string(expectedMD5sum) {
-		return fmt.Errorf("expecting MD5 sum '%s' but got '%s'", expectedMD5sum, md5sum)
+	if md5sum != string(expected) {
+		return fmt.Errorf("expecting MD5 sum '%s' but got '%s'", expected, md5sum)
 	}
 
 	return nil
