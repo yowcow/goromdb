@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var sampleDBFile = "../../data/sample-data.json"
+var sampleDBFile = "../../data/store/sample-data.json"
 
 func TestLoadJSON_returns_error_on_non_existing_file(t *testing.T) {
 	_, err := LoadJSON("./hoge/fuga")

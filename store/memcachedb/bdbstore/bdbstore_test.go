@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var sampleDBFile = "../../../data/sample-memcachedb-bdb.db"
+var sampleDBFile = "../../../data/store/sample-memcachedb-bdb.db"
 
 func TestNew(t *testing.T) {
 	buf := new(bytes.Buffer)

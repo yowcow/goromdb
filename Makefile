@@ -1,10 +1,12 @@
 BINARY = romdb
 CIDFILE = .romdb-cid
 
-DB_FILES = data/sample-bdb.db data/sample-memcachedb-bdb.db
-MD5_FILES = data/sample-data.json.md5 $(foreach file,$(DB_FILES),$(file).md5)
+DB_FILES = sample-data.json sample-bdb.db sample-memcachedb-bdb.db
+DB_DIR = data/store
+DB_PATHS = $(addprefix $(DB_DIR)/,$(DB_FILES))
+MD5_PATHS = $(foreach path,$(DB_PATHS),$(path).md5)
 
-all: dep $(DB_FILES) $(MD5_FILES) $(BINARY)
+all: dep $(DB_DIR) $(DB_PATHS) $(MD5_PATHS) $(BINARY)
 
 dep:
 	dep ensure
@@ -12,13 +14,19 @@ dep:
 test:
 	go test ./...
 
-data/%.md5: data/%
+$(DB_DIR):
+	mkdir -p $@
+
+$(DB_DIR)/%.md5: $(DB_DIR)/%
 	md5sum $< > $@
 
-data/sample-bdb.db: data/sample-data.json
+$(DB_DIR)/sample-data.json: data/sample-data.json
+	cp $< $@
+
+$(DB_DIR)/sample-bdb.db: data/sample-data.json
 	go run ./cmd/sample-data/bdb/bdb.go -input-from $< -output-to $@
 
-data/sample-memcachedb-bdb.db: data/sample-data.json
+$(DB_DIR)/sample-memcachedb-bdb.db: data/sample-data.json
 	go run ./cmd/sample-data/memcachedb-bdb/memcachedb-bdb.go -input-from $< -output-to $@
 
 bench:
@@ -28,7 +36,7 @@ $(BINARY):
 	go build -o $@ ./cmd/server
 
 clean:
-	rm -rf $(BINARY) $(MD5_FILES) $(DB_FILES)
+	rm -rf $(BINARY) $(DB_PATHS) $(MD5_PATHS)
 
 realclean: clean
 	rm -rf vendor

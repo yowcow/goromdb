@@ -1,6 +1,5 @@
 /.romdb-cid
 /Gopkg.lock
-/data/*.db
-/data/*.md5
+/data/store
 /romdb
 /vendor
