@@ -63,16 +63,6 @@ func New(file string, logger *log.Logger) store.Store {
 func (s *Store) startDataNode(boot chan<- bool, dbIn <-chan *bdb.BerkeleyDB) {
 	defer s.dataNodeWg.Done()
 
-	if db, err := OpenBDB(s.file); err == nil {
-		if err = store.CheckMD5Sum(s.file, s.file+".md5"); err != nil {
-			s.logger.Print("-> data node failed checking MD5 sum: ", err)
-		} else {
-			s.db = db
-		}
-	} else {
-		s.logger.Print("-> data node failed reading data from file: ", err)
-	}
-
 	boot <- true
 	s.logger.Print("-> data node started!")
 
@@ -102,15 +92,25 @@ func (s Store) startDataLoader(boot chan<- bool, dbOut chan<- *bdb.BerkeleyDB) {
 	defer s.dataLoaderWg.Done()
 
 	d := 5 * time.Second
+	watcher := store.NewWatcher(s.file, d, store.CheckMD5Sum, s.logger)
+
+	if watcher.IsLoadable() {
+		if db, err := OpenBDB(s.file); err == nil {
+			dbOut <- db
+		} else {
+			s.logger.Print("-> data loader failed reading data from file: ", err)
+		}
+	}
+
+	boot <- true
+	s.logger.Print("-> data loader started!")
+
 	update := make(chan bool)
 	quit := make(chan bool)
 	wg := &sync.WaitGroup{}
 
 	wg.Add(1)
-	go store.NewWatcher(d, s.file, s.logger, update, quit, wg, store.CheckMD5Sum)
-
-	boot <- true
-	s.logger.Print("-> data loader started!")
+	go watcher.Start(update, quit, wg)
 
 	for {
 		select {
@@ -125,7 +125,6 @@ func (s Store) startDataLoader(boot chan<- bool, dbOut chan<- *bdb.BerkeleyDB) {
 			close(quit)
 			wg.Wait()
 			close(update)
-
 			s.logger.Print("-> data loader finished!")
 			return
 		}

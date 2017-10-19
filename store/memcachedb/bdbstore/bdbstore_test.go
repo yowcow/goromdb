@@ -3,7 +3,6 @@ package bdbstore
 import (
 	"bytes"
 	"log"
-	"regexp"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -26,13 +25,8 @@ func TestNew_with_non_existing_file(t *testing.T) {
 
 	store := New("hogefuga.txt", logger)
 
+	assert.NotNil(t, store)
 	assert.Nil(t, store.Shutdown())
-
-	re := regexp.MustCompile("No such file or directory")
-	line, err := buf.ReadString('\n')
-
-	assert.Nil(t, err)
-	assert.True(t, re.MatchString(line))
 }
 
 func TestGet_on_existing_key(t *testing.T) {

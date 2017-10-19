@@ -62,16 +62,6 @@ func New(file string, logger *log.Logger) store.Store {
 func (s *Store) startDataNode(boot chan<- bool, dataIn <-chan Data) {
 	defer s.dataNodeWg.Done()
 
-	if data, err := LoadJSON(s.file); err == nil {
-		if err = store.CheckMD5Sum(s.file, s.file+".md5"); err != nil {
-			s.logger.Print("-> data node failed checking MD5 sum: ", err)
-		} else {
-			s.data = data
-		}
-	} else {
-		s.logger.Print("-> data node failed reading data from file: ", err)
-	}
-
 	boot <- true
 	s.logger.Print("-> data node started!")
 
@@ -91,15 +81,25 @@ func (s Store) startDataLoader(boot chan<- bool, dataOut chan<- Data) {
 	defer s.dataLoaderWg.Done()
 
 	d := 5 * time.Second
+	watcher := store.NewWatcher(s.file, d, store.CheckMD5Sum, s.logger)
+
+	if watcher.IsLoadable() {
+		if data, err := LoadJSON(s.file); err == nil {
+			dataOut <- data
+		} else {
+			s.logger.Print("-> data loader failed reading data from file: ", err)
+		}
+	}
+
+	boot <- true
+	s.logger.Print("-> data loader started!")
+
 	update := make(chan bool)
 	quit := make(chan bool)
 	wg := &sync.WaitGroup{}
 
 	wg.Add(1)
-	go store.NewWatcher(d, s.file, s.logger, update, quit, wg, store.CheckMD5Sum)
-
-	boot <- true
-	s.logger.Print("-> data loader started!")
+	go watcher.Start(update, quit, wg)
 
 	for {
 		select {
@@ -114,7 +114,6 @@ func (s Store) startDataLoader(boot chan<- bool, dataOut chan<- Data) {
 			close(quit)
 			wg.Wait()
 			close(update)
-
 			s.logger.Print("-> data loader finished!")
 			return
 		}
