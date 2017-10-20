@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 )
 
 type Store interface {
@@ -48,6 +49,23 @@ func CheckMD5Sum(file string) error {
 	}
 
 	return nil
+}
+
+const DirCount = 2
+
+func BuildStoreDirs(baseDir string) ([]string, error) {
+	dirs := make([]string, DirCount)
+
+	for i := 0; i < DirCount; i++ {
+		dir := filepath.Join(baseDir, fmt.Sprintf("db0%d", i))
+		err := os.MkdirAll(dir, os.ModeDir)
+		if err != nil {
+			return nil, err
+		}
+		dirs[i] = dir
+	}
+
+	return dirs, nil
 }
 
 func KeyNotFoundError(key []byte) error {
