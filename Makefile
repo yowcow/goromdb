@@ -49,11 +49,11 @@ docker/run:
 		--rm \
 		-v `pwd`:/go/src/github.com/yowcow/go-romdb \
 		--cidfile=$(CIDFILE) \
-		-it $(BINARY) bash
+		-it $(BINARY) sh
 	rm -f $(CIDFILE)
 
 docker/exec:
-	test -f $(CIDFILE) && docker exec -it `cat $(CIDFILE)` bash
+	test -f $(CIDFILE) && docker exec -it `cat $(CIDFILE)` sh
 
 docker/rmi:
 	docker rmi $(BINARY)

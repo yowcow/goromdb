@@ -1,11 +1,12 @@
-FROM golang:1.9
+FROM golang:1.9.1-alpine
 
-RUN apt-get update \
-    && apt-get -yqq install \
-        libdb-dev \
-        telnet \
-    && rm -rf /var/lib/apt/lists/*
-RUN mkdir -p /go/src/github.com/yowcow/go-romdb
+RUN apk add --no-cache \
+    db-dev \
+    g++ \
+    gcc \
+    git \
+    make \
+    putty
 RUN go get github.com/golang/dep/cmd/dep
 
 COPY ./ /go/src/github.com/yowcow/go-romdb
