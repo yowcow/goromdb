@@ -59,17 +59,15 @@ func (w *Watcher) IsLoadable() bool {
 			if w.checksum == nil {
 				w.lastModified = fi.ModTime()
 				return true
-			} else {
-				w.logger.Print("-> watcher file checksum verification in progress")
-				if err = w.checksum(w.file); err == nil {
-					w.logger.Print("-> watcher file checksum verification succeeded")
-					w.lastModified = fi.ModTime()
-					return true
-				} else {
-					w.logger.Print("-> watcher file checksum verification failed: ", err)
-					return false
-				}
 			}
+			w.logger.Print("-> watcher file checksum verification in progress")
+			if err = w.checksum(w.file); err == nil {
+				w.logger.Print("-> watcher file checksum verification succeeded")
+				w.lastModified = fi.ModTime()
+				return true
+			}
+			w.logger.Print("-> watcher file checksum verification failed: ", err)
+			return false
 		}
 	}
 	return false
