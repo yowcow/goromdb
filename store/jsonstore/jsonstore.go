@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"log"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -80,14 +81,25 @@ func (s *Store) startDataNode(boot chan<- bool, dataIn <-chan Data) {
 func (s Store) startDataLoader(boot chan<- bool, dataOut chan<- Data) {
 	defer s.dataLoaderWg.Done()
 
+	baseDir := filepath.Dir(s.file)
+	loader := store.NewLoader(baseDir, s.logger)
+
+	if err := loader.BuildStoreDirs(); err != nil {
+		s.logger.Print("-> data loader failed creating directories: ", err)
+	}
+
 	d := 5 * time.Second
 	watcher := store.NewWatcher(s.file, d, store.CheckMD5Sum, s.logger)
 
 	if watcher.IsLoadable() {
-		if data, err := LoadJSON(s.file); err == nil {
-			dataOut <- data
+		if nextFile, err := loader.MoveFileToNextDir(s.file); err != nil {
+			s.logger.Print("-> data loader failed moving file to store directory: ", err)
 		} else {
-			s.logger.Print("-> data loader failed reading data from file: ", err)
+			if data, err := LoadJSON(nextFile); err != nil {
+				s.logger.Print("-> data loader failed reading data from file: ", err)
+			} else {
+				dataOut <- data
+			}
 		}
 	}
 
@@ -104,10 +116,17 @@ func (s Store) startDataLoader(boot chan<- bool, dataOut chan<- Data) {
 	for {
 		select {
 		case <-update:
-			if data, err := LoadJSON(s.file); err == nil {
-				dataOut <- data
+			if nextFile, err := loader.MoveFileToNextDir(s.file); err != nil {
+				s.logger.Print("-> data loader failed moving file to store directory: ", err)
 			} else {
-				s.logger.Print("-> data loader failed reading data from file: ", err)
+				if data, err := LoadJSON(nextFile); err != nil {
+					s.logger.Print("-> data loader failed reading data from file: ", err)
+				} else {
+					dataOut <- data
+					if err = loader.CleanOldDir(s.file); err != nil {
+						s.logger.Print("-> data loader failed cleaning old directory: ", err)
+					}
+				}
 			}
 		case <-s.dataLoaderQuit:
 			quit <- true
