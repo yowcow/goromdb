@@ -134,7 +134,7 @@ func TestLoader_MoveFileToNextDir(t *testing.T) {
 	assert.Nil(t, err)
 }
 
-func TestLoader_CleanOldDir(t *testing.T) {
+func TestLoader_CleanOldDirs(t *testing.T) {
 	dir, err := ioutil.TempDir(os.TempDir(), "store-test")
 	if err != nil {
 		t.Fatal(err)
@@ -161,7 +161,7 @@ func TestLoader_CleanOldDir(t *testing.T) {
 	}
 	fh.Close()
 
-	err = loader.CleanOldDir(filepath.Join(dir, "hoge.txt"))
+	err = loader.CleanOldDirs()
 
 	assert.Nil(t, err)
 
