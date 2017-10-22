@@ -2,6 +2,7 @@ package bdbstore
 
 import (
 	"log"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -91,14 +92,25 @@ func (s *Store) startDataNode(boot chan<- bool, dbIn <-chan *bdb.BerkeleyDB) {
 func (s Store) startDataLoader(boot chan<- bool, dbOut chan<- *bdb.BerkeleyDB) {
 	defer s.dataLoaderWg.Done()
 
+	baseDir := filepath.Dir(s.file)
+	loader := store.NewLoader(baseDir, s.logger)
+
+	if err := loader.BuildStoreDirs(); err != nil {
+		s.logger.Print("-> data loader failed creating directories: ", err)
+	}
+
 	d := 5 * time.Second
 	watcher := store.NewWatcher(s.file, d, store.CheckMD5Sum, s.logger)
 
 	if watcher.IsLoadable() {
-		if db, err := OpenBDB(s.file); err == nil {
-			dbOut <- db
+		if nextFile, err := loader.MoveFileToNextDir(s.file); err != nil {
+			s.logger.Print("-> data loader failed moving file to store directory: ", err)
 		} else {
-			s.logger.Print("-> data loader failed reading data from file: ", err)
+			if db, err := OpenBDB(nextFile); err != nil {
+				s.logger.Print("-> data loader failed reading data from file: ", err)
+			} else {
+				dbOut <- db
+			}
 		}
 	}
 
@@ -115,10 +127,17 @@ func (s Store) startDataLoader(boot chan<- bool, dbOut chan<- *bdb.BerkeleyDB) {
 	for {
 		select {
 		case <-update:
-			if db, err := OpenBDB(s.file); err == nil {
-				dbOut <- db
+			if nextFile, err := loader.MoveFileToNextDir(s.file); err != nil {
+				s.logger.Print("-> data loader failed moving file to store directory: ", err)
 			} else {
-				s.logger.Print("-> data loader failed reading data from file: ", err)
+				if db, err := OpenBDB(nextFile); err != nil {
+					s.logger.Print("-> data loader failed reading data from file: ", err)
+				} else {
+					dbOut <- db
+					if err = loader.CleanOldDir(s.file); err != nil {
+						s.logger.Print("-> data loader failed cleaning old directory: ", err)
+					}
+				}
 			}
 		case <-s.dataLoaderQuit:
 			quit <- true

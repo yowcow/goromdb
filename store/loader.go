@@ -10,17 +10,14 @@ import (
 const DirCount = 2
 
 type Loader struct {
-	file         string
 	baseDir      string
 	storeDirs    []string
 	currentIndex int
 	logger       *log.Logger
 }
 
-func NewLoader(file string, logger *log.Logger) *Loader {
-	baseDir := filepath.Dir(file)
+func NewLoader(baseDir string, logger *log.Logger) *Loader {
 	return &Loader{
-		file,
 		baseDir,
 		nil,
 		0,
@@ -37,12 +34,39 @@ func (l *Loader) BuildStoreDirs() error {
 	return nil
 }
 
+func (l *Loader) MoveFileToNextDir(file string) (string, error) {
+	nextIndex := l.currentIndex + 1
+	if nextIndex == len(l.storeDirs) {
+		nextIndex = 0
+	}
+	nextDir := l.storeDirs[nextIndex]
+	base := filepath.Base(file)
+	nextFile := filepath.Join(nextDir, base)
+	if err := os.Rename(file, nextFile); err != nil {
+		return "", err
+	}
+	l.currentIndex = nextIndex
+	return nextFile, nil
+}
+
+func (l Loader) CleanOldDir(file string) error {
+	base := filepath.Base(file)
+	for i, dir := range l.storeDirs {
+		if i != l.currentIndex {
+			if err := os.Remove(filepath.Join(dir, base)); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 func BuildDirs(baseDir string, count int) ([]string, error) {
 	dirs := make([]string, count)
 
 	for i := 0; i < DirCount; i++ {
 		dir := filepath.Join(baseDir, fmt.Sprintf("db0%d", i))
-		err := os.MkdirAll(dir, os.ModeDir)
+		err := os.MkdirAll(dir, 0755)
 		if err != nil {
 			return nil, err
 		}
