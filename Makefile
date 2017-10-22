@@ -1,6 +1,12 @@
 BINARY = romdb
 CIDFILE = .romdb-cid
 
+ifeq ($(shell uname -s),Darwin)
+MD5 = md5 -r
+else
+MD5 = md5sum
+endif
+
 DB_FILES = sample-data.json sample-bdb.db sample-memcachedb-bdb.db
 DB_DIR = data/store
 DB_PATHS = $(addprefix $(DB_DIR)/,$(DB_FILES))
@@ -18,7 +24,7 @@ $(DB_DIR):
 	mkdir -p $@
 
 $(DB_DIR)/%.md5: $(DB_DIR)/%
-	md5sum $< > $@
+	$(MD5) $< > $@
 
 $(DB_DIR)/sample-data.json: data/sample-data.json
 	cp $< $@
