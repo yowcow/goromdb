@@ -10,6 +10,7 @@ import (
 	"github.com/yowcow/go-romdb/store/memcachedb"
 )
 
+// Data represents a key-value data
 type Data map[string]string
 
 func main() {

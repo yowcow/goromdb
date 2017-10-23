@@ -7,9 +7,13 @@ import (
 	"path/filepath"
 )
 
+// DirCount defines the number of subdirectories
 const DirCount = 2
+
+// DirPerm defines directory permission
 const DirPerm = 0755
 
+// Loader represents a loader
 type Loader struct {
 	baseDir      string
 	storeDirs    []string
@@ -17,6 +21,7 @@ type Loader struct {
 	logger       *log.Logger
 }
 
+// NewLoader creates a new loader
 func NewLoader(baseDir string, logger *log.Logger) *Loader {
 	storeDirs := make([]string, DirCount)
 	return &Loader{
@@ -27,6 +32,7 @@ func NewLoader(baseDir string, logger *log.Logger) *Loader {
 	}
 }
 
+// BuildStoreDirs creates store subdirectories and update loader
 func (l *Loader) BuildStoreDirs() error {
 	storeDirs, err := BuildDirs(l.baseDir, DirCount)
 	if err != nil {
@@ -36,6 +42,7 @@ func (l *Loader) BuildStoreDirs() error {
 	return nil
 }
 
+// MoveFileToNextDir moves given file into next subdirectory, and returns the filepath
 func (l *Loader) MoveFileToNextDir(file string) (string, error) {
 	nextIndex := l.currentIndex + 1
 	if nextIndex == len(l.storeDirs) {
@@ -51,6 +58,7 @@ func (l *Loader) MoveFileToNextDir(file string) (string, error) {
 	return nextFile, nil
 }
 
+// CleanOldDirs remove and recreate subdirectories not currently in use
 func (l Loader) CleanOldDirs() error {
 	for i, dir := range l.storeDirs {
 		if i != l.currentIndex {
@@ -65,6 +73,7 @@ func (l Loader) CleanOldDirs() error {
 	return nil
 }
 
+// BuildDirs creates subdirectories into given directory
 func BuildDirs(baseDir string, count int) ([]string, error) {
 	dirs := make([]string, count)
 

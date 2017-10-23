@@ -10,6 +10,7 @@ import (
 	"github.com/yowcow/go-romdb/store"
 )
 
+// Server represents a server
 type Server struct {
 	proto string
 	addr  string
@@ -22,6 +23,7 @@ type Server struct {
 	logger *log.Logger
 }
 
+// New creates a new server
 func New(proto, addr string, protocol protocol.Protocol, store store.Store, logger *log.Logger) *Server {
 	quit := make(chan bool)
 	wg := &sync.WaitGroup{}
@@ -36,6 +38,7 @@ func New(proto, addr string, protocol protocol.Protocol, store store.Store, logg
 	}
 }
 
+// Start starts a server and spawns a goroutine when a new connection is accepted
 func (s Server) Start() error {
 	defer s.wg.Done()
 
@@ -76,6 +79,7 @@ func (s Server) Start() error {
 	}
 }
 
+// Shutdown terminates a server
 func (s Server) Shutdown() error {
 	s.quit <- true
 	close(s.quit)

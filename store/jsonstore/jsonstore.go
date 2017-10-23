@@ -11,8 +11,10 @@ import (
 	"github.com/yowcow/go-romdb/store"
 )
 
+// Data represents a key-value data
 type Data map[string]string
 
+// Store represents a store
 type Store struct {
 	file   string
 	data   Data
@@ -26,6 +28,7 @@ type Store struct {
 	dataLoaderWg   *sync.WaitGroup
 }
 
+// New creates a new store
 func New(file string, logger *log.Logger) store.Store {
 	var data Data
 	dataUpdate := make(chan Data)
@@ -143,6 +146,7 @@ func (s Store) startDataLoader(boot chan<- bool, dataOut chan<- Data) {
 	}
 }
 
+// Get retrieves the value for given key from a store
 func (s Store) Get(key []byte) ([]byte, error) {
 	if v, ok := s.data[string(key)]; ok {
 		return []byte(v), nil
@@ -150,6 +154,7 @@ func (s Store) Get(key []byte) ([]byte, error) {
 	return nil, store.KeyNotFoundError(key)
 }
 
+// Shutdown terminates a store
 func (s Store) Shutdown() error {
 	s.dataLoaderQuit <- true
 	close(s.dataLoaderQuit)
@@ -162,6 +167,7 @@ func (s Store) Shutdown() error {
 	return nil
 }
 
+// LoadJSON reads file and parse JSON into Data
 func LoadJSON(file string) (Data, error) {
 	var data Data
 
