@@ -51,7 +51,7 @@ and import whatever package into your source code.
 BENCHMARK AND PERFORMANCE
 -------------------------
 
-ROM DB should serve fast but not quite as fast as pure memcached.
+ROM DB should serve fast but maybe not quite as fast as pure memcached.
 Detailed benchmark is comming up.
 
 DIRECTORY STRUCTURE
