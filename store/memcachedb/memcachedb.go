@@ -9,6 +9,7 @@ import (
 
 const _Zero uint8 = 0
 
+// Serialize serializes given key and value into MemcacheDB format binary, and writes to writer
 func Serialize(w io.Writer, key, val []byte) error {
 	nKey := len(key)
 	nBytes := len(val) + 2
@@ -42,6 +43,7 @@ func Serialize(w io.Writer, key, val []byte) error {
 	return nil
 }
 
+// Deserialize deserializes MemcacheDB format binary from reader into key, value and value length
 func Deserialize(r io.Reader) ([]byte, []byte, int, error) {
 	var err error
 	var (

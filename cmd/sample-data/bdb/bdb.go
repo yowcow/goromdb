@@ -8,6 +8,7 @@ import (
 	"github.com/ajiyoshi-vg/goberkeleydb/bdb"
 )
 
+// Data represents a key-value data
 type Data map[string]string
 
 func main() {

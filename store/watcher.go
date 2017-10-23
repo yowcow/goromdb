@@ -7,6 +7,7 @@ import (
 	"time"
 )
 
+// Watcher represents a watcher
 type Watcher struct {
 	file         string
 	duration     time.Duration
@@ -15,6 +16,7 @@ type Watcher struct {
 	logger       *log.Logger
 }
 
+// NewWatcher creates a new watcher
 func NewWatcher(
 	file string,
 	duration time.Duration,
@@ -31,6 +33,7 @@ func NewWatcher(
 	}
 }
 
+// Start watches file update, and notifies to given channel when updated
 func (w Watcher) Start(update chan<- bool, quit <-chan bool, wg *sync.WaitGroup) {
 	defer wg.Done()
 	timer := time.NewTimer(w.duration)
@@ -53,6 +56,7 @@ func (w Watcher) Start(update chan<- bool, quit <-chan bool, wg *sync.WaitGroup)
 	}
 }
 
+// IsLoadable determines if the file is now loadable
 func (w *Watcher) IsLoadable() bool {
 	if fi, err := os.Stat(w.file); err == nil {
 		if fi.ModTime() != w.lastModified {

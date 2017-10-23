@@ -10,8 +10,10 @@ import (
 	"github.com/yowcow/go-romdb/store"
 )
 
+// Data represents a key-value data
 type Data map[string][]byte
 
+// Store represents a store
 type Store struct {
 	file   string
 	data   Data
@@ -26,6 +28,7 @@ type Store struct {
 	dataLoaderWg   *sync.WaitGroup
 }
 
+// New creates a store
 func New(file string, logger *log.Logger) store.Store {
 	data := make(Data)
 	dbUpdate := make(chan *bdb.BerkeleyDB)
@@ -154,6 +157,7 @@ func (s Store) startDataLoader(boot chan<- bool, dbOut chan<- *bdb.BerkeleyDB) {
 	}
 }
 
+// Get retrieves the value for given key from a store
 func (s Store) Get(key []byte) ([]byte, error) {
 	k := string(key)
 	if v, ok := s.data[k]; ok {
@@ -170,6 +174,7 @@ func (s Store) Get(key []byte) ([]byte, error) {
 	return nil, store.KeyNotFoundError(key)
 }
 
+// Shutdown terminates a store
 func (s Store) Shutdown() error {
 	s.dataLoaderQuit <- true
 	close(s.dataLoaderQuit)
@@ -182,6 +187,7 @@ func (s Store) Shutdown() error {
 	return nil
 }
 
+// OpenBDB creates a BDB handle for given file
 func OpenBDB(file string) (*bdb.BerkeleyDB, error) {
 	return bdb.OpenBDB(bdb.NoEnv, bdb.NoTxn, file, nil, bdb.BTree, bdb.DbReadOnly, 0)
 }

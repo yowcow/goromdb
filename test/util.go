@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 )
 
+// CreateStoreDir creates a temporary data store directory for testing
 func CreateStoreDir() (string, error) {
 	dir, err := ioutil.TempDir(os.TempDir(), "bdbstore-test")
 	if err != nil {
@@ -19,6 +20,7 @@ func CreateStoreDir() (string, error) {
 	return dir, nil
 }
 
+// CopyDBFile copies content of dbfile into file data.db in given directory
 func CopyDBFile(dir, dbfile string) (string, error) {
 	file := filepath.Join(dir, "data.db")
 	fw, err := os.OpenFile(file, os.O_CREATE|os.O_WRONLY, 0644)

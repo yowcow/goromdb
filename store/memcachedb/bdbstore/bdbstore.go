@@ -9,11 +9,13 @@ import (
 	"github.com/yowcow/go-romdb/store/memcachedb"
 )
 
+// Store represents a store
 type Store struct {
 	proxy  store.Store
 	logger *log.Logger
 }
 
+// New creates a new store
 func New(file string, logger *log.Logger) store.Store {
 	proxy := bdb.New(file, logger)
 	s := &Store{
@@ -23,6 +25,7 @@ func New(file string, logger *log.Logger) store.Store {
 	return s
 }
 
+// Get retrieves the value for given key from a store
 func (s Store) Get(key []byte) ([]byte, error) {
 	val, err := s.proxy.Get(key)
 	if err != nil {
@@ -39,6 +42,7 @@ func (s Store) Get(key []byte) ([]byte, error) {
 	return v, nil
 }
 
+// Shutdown terminates a store
 func (s Store) Shutdown() error {
 	return s.proxy.Shutdown()
 }
