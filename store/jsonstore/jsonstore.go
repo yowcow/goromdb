@@ -100,6 +100,7 @@ func (s Store) startDataLoader(boot chan<- bool, dataOut chan<- Data) {
 		if nextFile, err := s.loader.MoveFileToNextDir(s.file); err != nil {
 			s.logger.Print("-> data loader failed moving file to store directory: ", err)
 		} else {
+			s.logger.Print("-> data loader reading data from file: ", nextFile)
 			if data, err := LoadJSON(nextFile); err != nil {
 				s.logger.Print("-> data loader failed reading data from file: ", err)
 			} else {
@@ -124,6 +125,7 @@ func (s Store) startDataLoader(boot chan<- bool, dataOut chan<- Data) {
 			if nextFile, err := s.loader.MoveFileToNextDir(s.file); err != nil {
 				s.logger.Print("-> data loader failed moving file to store directory: ", err)
 			} else {
+				s.logger.Print("-> data loader reading data from file: ", nextFile)
 				if data, err := LoadJSON(nextFile); err != nil {
 					s.logger.Print("-> data loader failed reading data from file: ", err)
 				} else {

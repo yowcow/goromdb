@@ -111,6 +111,7 @@ func (s Store) startDataLoader(boot chan<- bool, dbOut chan<- *bdb.BerkeleyDB) {
 		if nextFile, err := s.loader.MoveFileToNextDir(s.file); err != nil {
 			s.logger.Print("-> data loader failed moving file to store directory: ", err)
 		} else {
+			s.logger.Print("-> data loader reading data from file: ", nextFile)
 			if db, err := OpenBDB(nextFile); err != nil {
 				s.logger.Print("-> data loader failed reading data from file: ", err)
 			} else {
@@ -135,6 +136,7 @@ func (s Store) startDataLoader(boot chan<- bool, dbOut chan<- *bdb.BerkeleyDB) {
 			if nextFile, err := s.loader.MoveFileToNextDir(s.file); err != nil {
 				s.logger.Print("-> data loader failed moving file to store directory: ", err)
 			} else {
+				s.logger.Print("-> data loader reading data from file: ", nextFile)
 				if db, err := OpenBDB(nextFile); err != nil {
 					s.logger.Print("-> data loader failed reading data from file: ", err)
 				} else {
