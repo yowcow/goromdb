@@ -1,5 +1,4 @@
-/.romdb-cid
 /Gopkg.lock
 /data/store
-/romdb
+/go-romdb
 /vendor

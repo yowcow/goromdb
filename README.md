@@ -21,19 +21,19 @@ ROM DB can be used as an executable binary, or a collection of simple libraries.
 Just do:
 
 ```
-go build -o romdb ./cmd/server
+go install github.com/yowcow/go-romdb
 ```
 
 To boot:
 
 ```
-./romdb -addr <address to be bound to> -store <data store> -file <path to data file>
+go-romdb -addr <address to be bound to> -store <data store> -file <path to data file>
 ```
 
 An example:
 
 ```
-./romdb -addr :11211 -store bdb -file path/to/bdb-data.db
+go-romdb -addr :11211 -store bdb -file path/to/bdb-data.db
 ```
 
 ROM DB currently does not daemonize itself.

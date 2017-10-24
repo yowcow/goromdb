@@ -1,5 +1,4 @@
-BINARY = romdb
-CIDFILE = .romdb-cid
+BINARY = go-romdb
 
 ifeq ($(shell uname -s),Darwin)
 MD5 = md5 -r
@@ -39,7 +38,7 @@ bench:
 	go test -bench .
 
 $(BINARY):
-	go build -o $@ ./cmd/server
+	go build
 
 clean:
 	rm -rf $(BINARY) $(DB_PATHS) $(MD5_PATHS)
@@ -47,21 +46,4 @@ clean:
 realclean: clean
 	rm -rf vendor
 
-docker/build:
-	docker build -t $(BINARY) .
-
-docker/run:
-	-docker run \
-		--rm \
-		-v `pwd`:/go/src/github.com/yowcow/go-romdb \
-		--cidfile=$(CIDFILE) \
-		-it $(BINARY) sh
-	rm -f $(CIDFILE)
-
-docker/exec:
-	test -f $(CIDFILE) && docker exec -it `cat $(CIDFILE)` sh
-
-docker/rmi:
-	docker rmi $(BINARY)
-
-.PHONY: dep test bench clean realclean docker/build docker/run docker/exec docker/rmi
+.PHONY: dep test bench clean realclean
