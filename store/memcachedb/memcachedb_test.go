@@ -21,3 +21,17 @@ func TestSerialize_and_Deserialize(t *testing.T) {
 	assert.Equal(t, []byte("ほげほげ!!"), val)
 	assert.Equal(t, 14, len)
 }
+
+func TestDeserialize_returns_header_error(t *testing.T) {
+	r := bytes.NewReader([]byte(""))
+	_, _, _, err := Deserialize(r)
+
+	assert.Equal(t, "failed reading memcachedb binary headers: EOF", err.Error())
+}
+
+func TestDeserialize_returns_body_error(t *testing.T) {
+	r := bytes.NewReader([]byte("hogefuga"))
+	_, _, _, err := Deserialize(r)
+
+	assert.Equal(t, "failed reading memcachedb binary body: EOF", err.Error())
+}

@@ -35,7 +35,7 @@ func (s Store) Get(key []byte) ([]byte, error) {
 	r := bytes.NewReader(val)
 	_, v, _, err := memcachedb.Deserialize(r)
 	if err != nil {
-		s.logger.Print(err)
+		s.logger.Print("-> deserialize failed for key '", string(key), "' with error: ", err)
 		return nil, err
 	}
 

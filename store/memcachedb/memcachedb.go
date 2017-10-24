@@ -36,7 +36,7 @@ func Serialize(w io.Writer, key, val []byte) error {
 	for _, v := range data {
 		var err error
 		if err = binary.Write(w, binary.LittleEndian, v); err != nil {
-			return err
+			return fmt.Errorf("failed writing memcachedb binary: %s", err.Error())
 		}
 	}
 
@@ -63,7 +63,7 @@ func Deserialize(r io.Reader) ([]byte, []byte, int, error) {
 	for _, v := range headers {
 		err = binary.Read(r, binary.LittleEndian, v)
 		if err != nil {
-			return nil, nil, 0, err
+			return nil, nil, 0, fmt.Errorf("failed reading memcachedb binary headers: %s", err.Error())
 		}
 	}
 
@@ -82,7 +82,7 @@ func Deserialize(r io.Reader) ([]byte, []byte, int, error) {
 	for _, v := range body {
 		err = binary.Read(r, binary.LittleEndian, v)
 		if err != nil {
-			return nil, nil, 0, err
+			return nil, nil, 0, fmt.Errorf("failed reading memcachedb binary body: %s", err.Error())
 		}
 	}
 

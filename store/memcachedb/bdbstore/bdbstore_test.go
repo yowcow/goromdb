@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"regexp"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -89,4 +90,28 @@ func TestGet_on_non_existing_key(t *testing.T) {
 	assert.Nil(t, val)
 	assert.NotNil(t, err)
 	assert.Nil(t, store.Shutdown())
+}
+
+type TestStore struct{}
+
+func (s TestStore) Get(key []byte) ([]byte, error) {
+	return []byte("hogefuga"), nil
+}
+
+func (s TestStore) Shutdown() error {
+	return nil
+}
+
+func TestGet_on_malformed_memcachedb_value(t *testing.T) {
+	buf := new(bytes.Buffer)
+	logger := log.New(buf, "", log.LstdFlags)
+	proxy := &TestStore{}
+	store := &Store{proxy, logger}
+
+	val, err := store.Get([]byte("foo"))
+	re := regexp.MustCompile("deserialize failed for key 'foo' with error:")
+
+	assert.Nil(t, val)
+	assert.Equal(t, "failed reading memcachedb binary body: EOF", err.Error())
+	assert.True(t, re.Match(buf.Bytes()))
 }
