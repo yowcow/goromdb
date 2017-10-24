@@ -12,8 +12,8 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/yowcow/go-romdb/protocol"
-	"github.com/yowcow/go-romdb/store"
+	"github.com/yowcow/goromdb/protocol"
+	"github.com/yowcow/goromdb/store"
 )
 
 type TestKeywords map[string][][]byte

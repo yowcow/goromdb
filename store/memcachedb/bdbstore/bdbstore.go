@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"log"
 
-	"github.com/yowcow/go-romdb/store"
-	bdb "github.com/yowcow/go-romdb/store/bdbstore"
-	"github.com/yowcow/go-romdb/store/memcachedb"
+	"github.com/yowcow/goromdb/store"
+	bdb "github.com/yowcow/goromdb/store/bdbstore"
+	"github.com/yowcow/goromdb/store/memcachedb"
 )
 
 // Store represents a store

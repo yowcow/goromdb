@@ -1,4 +1,4 @@
-BINARY = go-romdb
+BINARY = goromdb
 
 ifeq ($(shell uname -s),Darwin)
 MD5 = md5 -r

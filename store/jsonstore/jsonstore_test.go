@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/yowcow/go-romdb/test"
+	"github.com/yowcow/goromdb/test"
 )
 
 var sampleDBFile = "../../data/store/sample-data.json"

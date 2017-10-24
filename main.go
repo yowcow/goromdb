@@ -6,13 +6,13 @@ import (
 	"log"
 	"os"
 
-	"github.com/yowcow/go-romdb/protocol"
-	"github.com/yowcow/go-romdb/protocol/memcachedprotocol"
-	"github.com/yowcow/go-romdb/server"
-	"github.com/yowcow/go-romdb/store"
-	"github.com/yowcow/go-romdb/store/bdbstore"
-	"github.com/yowcow/go-romdb/store/jsonstore"
-	memcachedb_bdb "github.com/yowcow/go-romdb/store/memcachedb/bdbstore"
+	"github.com/yowcow/goromdb/protocol"
+	"github.com/yowcow/goromdb/protocol/memcachedprotocol"
+	"github.com/yowcow/goromdb/server"
+	"github.com/yowcow/goromdb/store"
+	"github.com/yowcow/goromdb/store/bdbstore"
+	"github.com/yowcow/goromdb/store/jsonstore"
+	memcachedb_bdb "github.com/yowcow/goromdb/store/memcachedb/bdbstore"
 )
 
 func main() {

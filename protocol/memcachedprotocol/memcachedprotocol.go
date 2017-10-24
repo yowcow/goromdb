@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/yowcow/go-romdb/protocol"
+	"github.com/yowcow/goromdb/protocol"
 )
 
 // Prefixes defines memcached protocol command prefixes to parse

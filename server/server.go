@@ -6,8 +6,8 @@ import (
 	"net"
 	"sync"
 
-	"github.com/yowcow/go-romdb/protocol"
-	"github.com/yowcow/go-romdb/store"
+	"github.com/yowcow/goromdb/protocol"
+	"github.com/yowcow/goromdb/store"
 )
 
 // Server represents a server

@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/ajiyoshi-vg/goberkeleydb/bdb"
-	"github.com/yowcow/go-romdb/store"
+	"github.com/yowcow/goromdb/store"
 )
 
 // Data represents a key-value data

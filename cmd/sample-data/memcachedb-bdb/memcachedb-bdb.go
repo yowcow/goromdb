@@ -7,7 +7,7 @@ import (
 	"io/ioutil"
 
 	"github.com/ajiyoshi-vg/goberkeleydb/bdb"
-	"github.com/yowcow/go-romdb/store/memcachedb"
+	"github.com/yowcow/goromdb/store/memcachedb"
 )
 
 // Data represents a key-value data
