@@ -10,8 +10,8 @@ RUN set -eux; \
         putty
 RUN go get github.com/golang/dep/cmd/dep
 
-COPY ./ /go/src/github.com/yowcow/go-romdb
-WORKDIR /go/src/github.com/yowcow/go-romdb
+COPY ./ /go/src/github.com/yowcow/goromdb
+WORKDIR /go/src/github.com/yowcow/goromdb
 
 RUN make clean && make
 
