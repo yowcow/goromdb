@@ -18,6 +18,7 @@ type Store struct {
 	file   string
 	data   Data
 	db     *bdb.BerkeleyDB
+	mx     *sync.RWMutex
 	logger *log.Logger
 	loader *store.Loader
 
@@ -31,6 +32,7 @@ type Store struct {
 // New creates a store
 func New(file string, logger *log.Logger) store.Store {
 	data := make(Data)
+	mx := new(sync.RWMutex)
 	dbUpdate := make(chan *bdb.BerkeleyDB)
 
 	dataNodeQuit := make(chan bool)
@@ -49,6 +51,7 @@ func New(file string, logger *log.Logger) store.Store {
 	s := &Store{
 		file:           file,
 		data:           data,
+		mx:             mx,
 		db:             nil,
 		loader:         loader,
 		logger:         logger,
@@ -82,8 +85,10 @@ func (s *Store) startDataNode(boot chan<- bool, dbIn <-chan *bdb.BerkeleyDB) {
 	for {
 		select {
 		case newDB := <-dbIn:
+			s.mx.Lock()
 			oldDB := s.db
 			s.db = newDB
+			s.mx.Unlock()
 			if oldDB != nil {
 				oldDB.Close(0)
 				oldDB = nil
@@ -158,7 +163,10 @@ func (s Store) startDataLoader(boot chan<- bool, dbOut chan<- *bdb.BerkeleyDB) {
 }
 
 // Get retrieves the value for given key from a store
-func (s Store) Get(key []byte) ([]byte, error) {
+func (s *Store) Get(key []byte) ([]byte, error) {
+	s.mx.RLock()
+	defer s.mx.RUnlock()
+
 	k := string(key)
 	if v, ok := s.data[k]; ok {
 		return v, nil
