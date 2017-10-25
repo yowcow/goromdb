@@ -1,4 +1,5 @@
 /Gopkg.lock
 /data/store
+/docker/build
 /goromdb
 /vendor
