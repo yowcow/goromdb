@@ -1,18 +1,20 @@
-all: build up logs
+BINARY = goromdb
+WORKDIR = /go/src/github.com/yowcow/$(BINARY)
 
-build:
-	docker-compose build
+OS = alpine debian-jessie debian-stretch
 
-up:
-	docker-compose up -d
+all: $(addprefix docker-build/,$(OS))
 
-logs:
-	docker-compose logs -f
+docker-build/%:
+	docker build -t $(BINARY):$* -f Dockerfile.$* .
 
-stop:
-	docker-compose stop
+build: $(addprefix go-build/,$(OS))
 
-down:
-	docker-compose down
+go-build/%:
+	docker run --rm \
+		-v `pwd`/../:$(WORKDIR) \
+		-w $(WORKDIR) \
+		$(BINARY):$* \
+		sh -c 'mkdir -p docker/build && go build -o docker/build/$(BINARY).$*'
 
-.PHONY: all build up logs stop down
+.PHONY: all build docker-build/% go-build/%

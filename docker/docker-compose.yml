@@ -1,17 +1,23 @@
-memcached:
-  image: memcached:latest
-  ports:
-    - "11223:11211"
+version: "3"
 
-romdb:
-  build: ./../
-  entrypoint:
-    - ./romdb
-    - -addr
-    - ":11211"
-    - -store
-    - memcachedb-bdb
-    - -file
-    - data/store/sample-memcachedb-bdb.db
-  ports:
-    - "11224:11211"
+services:
+  memcached:
+    image: memcached:latest
+    ports:
+      - "11223:11211"
+  goromdb:
+    build:
+      context: .
+      dockerfile: Dockerfile.alpine
+    volumes:
+      - ./../:/go/src/github.com/yowcow/goromdb:rw
+    working_dir: /go/src/github.com/yowcow/goromdb
+    command: sh -c '
+      go run ./cmd/sample-data/memcachedb-bdb/memcachedb-bdb.go
+        -input-from data/sample-data.json
+        -output-to /tmp/data.db &&
+      md5sum /tmp/data.db > /tmp/data.db.md5 &&
+      go build -o /tmp/goromdb &&
+      /tmp/goromdb -addr :11211 -store memcachedb-bdb -file /tmp/data.db'
+    ports:
+      - "11224:11211"
