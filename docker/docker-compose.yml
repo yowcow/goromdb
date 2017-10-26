@@ -1,4 +1,4 @@
-version: "2"
+version: "3"
 
 services:
   memcached:
@@ -10,7 +10,7 @@ services:
       context: .
       dockerfile: Dockerfile.alpine
     volumes:
-      - ./../:/go/src/github.com/yowcow/goromdb:rw
+      - ./../:/go/src/github.com/yowcow/goromdb:ro
     working_dir: /go/src/github.com/yowcow/goromdb
     command: sh -c '
       go run ./cmd/sample-data/memcachedb-bdb/memcachedb-bdb.go
