@@ -20,4 +20,7 @@ go-build/%:
 		$(BINARY):$* \
 		sh -c 'mkdir -p docker/build && go build -o docker/build/$(BINARY).$*'
 
-.PHONY: all build docker-build/% docker-pull/% go-build/%
+clean:
+	rm -rf build
+
+.PHONY: all build docker-build/% docker-pull/% go-build/% clean
