@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/yowcow/goromdb/store"
 	"github.com/yowcow/goromdb/test"
 )
 
@@ -23,6 +24,31 @@ func TestLoadJSON_returns_error_on_invalid_JSON(t *testing.T) {
 	_, err := LoadJSON("./jsonstore-invalid.json")
 
 	assert.NotNil(t, err)
+}
+
+func TestLoadData_returns_data(t *testing.T) {
+	dir, err := test.CreateStoreDir()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(dir)
+
+	buf := new(bytes.Buffer)
+	logger := log.New(buf, "", log.LstdFlags)
+	loader := store.NewLoader(dir, logger)
+	err = loader.BuildStoreDirs()
+	if err != nil {
+		t.Fatal(err)
+	}
+	file, err := test.CopyDBFile(dir, sampleDBFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	data, err := LoadData(loader, file)
+
+	assert.Nil(t, err)
+	assert.Equal(t, "hoge!", data["hoge"])
 }
 
 func TestNew(t *testing.T) {

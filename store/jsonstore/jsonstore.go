@@ -2,8 +2,8 @@ package jsonstore
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"log"
+	"os"
 	"path/filepath"
 	"sync"
 	"time"
@@ -20,12 +20,8 @@ type Store struct {
 	data   Data
 	logger *log.Logger
 	loader *store.Loader
-
-	dataNodeQuit chan bool
-	dataNodeWg   *sync.WaitGroup
-
-	dataLoaderQuit chan bool
-	dataLoaderWg   *sync.WaitGroup
+	quit   chan bool
+	wg     *sync.WaitGroup
 }
 
 // New creates a new store
@@ -33,11 +29,8 @@ func New(file string, logger *log.Logger) store.Store {
 	var data Data
 	dataUpdate := make(chan Data)
 
-	dataNodeQuit := make(chan bool)
-	dataNodeWg := &sync.WaitGroup{}
-
-	dataLoaderQuit := make(chan bool)
-	dataLoaderWg := &sync.WaitGroup{}
+	quit := make(chan bool)
+	wg := &sync.WaitGroup{}
 
 	baseDir := filepath.Dir(file)
 	loader := store.NewLoader(baseDir, logger)
@@ -51,69 +44,37 @@ func New(file string, logger *log.Logger) store.Store {
 		data,
 		logger,
 		loader,
-		dataNodeQuit,
-		dataNodeWg,
-		dataLoaderQuit,
-		dataLoaderWg,
+		quit,
+		wg,
 	}
 
 	boot := make(chan bool)
 
-	dataNodeWg.Add(1)
+	wg.Add(1)
 	go s.startDataNode(boot, dataUpdate)
-	<-boot
 
-	dataLoaderWg.Add(1)
-	go s.startDataLoader(boot, dataUpdate)
 	<-boot
-
 	close(boot)
 
 	return s
 }
 
 func (s *Store) startDataNode(boot chan<- bool, dataIn <-chan Data) {
-	defer s.dataNodeWg.Done()
-
-	boot <- true
-	s.logger.Print("-> data node started!")
-
-	for {
-		select {
-		case data := <-dataIn:
-			s.logger.Print("-> data node updated!")
-			s.data = data
-			if err := s.loader.CleanOldDirs(); err != nil {
-				s.logger.Print("-> data node failed cleaning old directory: ", err)
-			}
-		case <-s.dataNodeQuit:
-			s.logger.Print("-> data node finished!")
-			return
-		}
-	}
-}
-
-func (s Store) startDataLoader(boot chan<- bool, dataOut chan<- Data) {
-	defer s.dataLoaderWg.Done()
+	defer s.wg.Done()
 
 	d := 5 * time.Second
 	watcher := store.NewWatcher(s.file, d, store.CheckMD5Sum, s.logger)
 
 	if watcher.IsLoadable() {
-		if nextFile, err := s.loader.MoveFileToNextDir(s.file); err != nil {
-			s.logger.Print("-> data loader failed moving file to store directory: ", err)
+		if data, err := LoadData(s.loader, s.file); err != nil {
+			s.logger.Print("-> data loader failed: ", err)
 		} else {
-			s.logger.Print("-> data loader reading data from file: ", nextFile)
-			if data, err := LoadJSON(nextFile); err != nil {
-				s.logger.Print("-> data loader failed reading data from file: ", err)
-			} else {
-				dataOut <- data
-			}
+			s.data = data
 		}
 	}
 
 	boot <- true
-	s.logger.Print("-> data loader started!")
+	s.logger.Print("-> data node started!")
 
 	update := make(chan bool)
 	quit := make(chan bool)
@@ -125,22 +86,23 @@ func (s Store) startDataLoader(boot chan<- bool, dataOut chan<- Data) {
 	for {
 		select {
 		case <-update:
-			if nextFile, err := s.loader.MoveFileToNextDir(s.file); err != nil {
-				s.logger.Print("-> data loader failed moving file to store directory: ", err)
+			s.logger.Print("-> data node ready to update!")
+			if data, err := LoadData(s.loader, s.file); err != nil {
+				s.logger.Print("-> data node failed loading data: ", err)
 			} else {
-				s.logger.Print("-> data loader reading data from file: ", nextFile)
-				if data, err := LoadJSON(nextFile); err != nil {
-					s.logger.Print("-> data loader failed reading data from file: ", err)
-				} else {
-					dataOut <- data
+				s.data = data
+				s.logger.Print("-> data node succeeded loading new data")
+				if err := s.loader.CleanOldDirs(); err != nil {
+					s.logger.Print("-> data node failed cleaning old directory: ", err)
 				}
+				s.logger.Print("-> data node updated!")
 			}
-		case <-s.dataLoaderQuit:
+		case <-s.quit:
 			quit <- true
 			close(quit)
 			wg.Wait()
 			close(update)
-			s.logger.Print("-> data loader finished!")
+			s.logger.Print("-> data node finished!")
 			return
 		}
 	}
@@ -156,27 +118,37 @@ func (s Store) Get(key []byte) ([]byte, error) {
 
 // Shutdown terminates a store
 func (s Store) Shutdown() error {
-	s.dataLoaderQuit <- true
-	close(s.dataLoaderQuit)
-	s.dataLoaderWg.Wait()
-
-	s.dataNodeQuit <- true
-	close(s.dataNodeQuit)
-	s.dataNodeWg.Wait()
-
+	s.quit <- true
+	close(s.quit)
+	s.wg.Wait()
 	return nil
+}
+
+// LoadData moves file into next store dir, unmarshals JSON and returns Data
+func LoadData(loader *store.Loader, file string) (Data, error) {
+	nextFile, err := loader.MoveFileToNextDir(file)
+	if err != nil {
+		return nil, err
+	}
+	data, err := LoadJSON(nextFile)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
 }
 
 // LoadJSON reads file and parse JSON into Data
 func LoadJSON(file string) (Data, error) {
 	var data Data
 
-	b, err := ioutil.ReadFile(file)
+	fi, err := os.Open(file)
 	if err != nil {
 		return data, err
 	}
+	defer fi.Close()
 
-	err = json.Unmarshal(b, &data)
+	dec := json.NewDecoder(fi)
+	err = dec.Decode(&data)
 	if err != nil {
 		return data, err
 	}
