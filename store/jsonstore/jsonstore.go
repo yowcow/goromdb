@@ -140,18 +140,15 @@ func LoadData(loader *store.Loader, file string) (Data, error) {
 // LoadJSON reads file and parse JSON into Data
 func LoadJSON(file string) (Data, error) {
 	var data Data
-
 	fi, err := os.Open(file)
 	if err != nil {
 		return data, err
 	}
 	defer fi.Close()
-
 	dec := json.NewDecoder(fi)
 	err = dec.Decode(&data)
 	if err != nil {
 		return data, err
 	}
-
 	return data, nil
 }

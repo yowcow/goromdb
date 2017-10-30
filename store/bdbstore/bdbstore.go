@@ -125,7 +125,6 @@ func (s *Store) startDataNode(boot chan<- bool, dbIn <-chan *bdb.BerkeleyDB) {
 func (s *Store) Get(key []byte) ([]byte, error) {
 	s.mx.RLock()
 	defer s.mx.RUnlock()
-
 	k := string(key)
 	if v, ok := s.data[k]; ok {
 		return v, nil
@@ -146,7 +145,6 @@ func (s Store) Shutdown() error {
 	s.quit <- true
 	close(s.quit)
 	s.wg.Wait()
-
 	return nil
 }
 

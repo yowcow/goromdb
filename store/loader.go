@@ -76,7 +76,6 @@ func (l Loader) CleanOldDirs() error {
 // BuildDirs creates subdirectories into given directory
 func BuildDirs(baseDir string, count int) ([]string, error) {
 	dirs := make([]string, count)
-
 	for i := 0; i < DirCount; i++ {
 		dir := filepath.Join(baseDir, fmt.Sprintf("db0%d", i))
 		if err := os.MkdirAll(dir, DirPerm); err != nil {
@@ -84,6 +83,5 @@ func BuildDirs(baseDir string, count int) ([]string, error) {
 		}
 		dirs[i] = dir
 	}
-
 	return dirs, nil
 }

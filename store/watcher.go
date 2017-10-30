@@ -38,7 +38,6 @@ func (w Watcher) Start(update chan<- bool, quit <-chan bool, wg *sync.WaitGroup)
 	defer wg.Done()
 	timer := time.NewTimer(w.duration)
 	w.logger.Print("-> watcher started!")
-
 	for {
 		select {
 		case <-timer.C:
