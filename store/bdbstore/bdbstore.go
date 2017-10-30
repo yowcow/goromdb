@@ -21,12 +21,8 @@ type Store struct {
 	mx     *sync.RWMutex
 	logger *log.Logger
 	loader *store.Loader
-
-	dataNodeQuit chan bool
-	dataNodeWg   *sync.WaitGroup
-
-	dataLoaderQuit chan bool
-	dataLoaderWg   *sync.WaitGroup
+	quit   chan bool
+	wg     *sync.WaitGroup
 }
 
 // New creates a store
@@ -35,11 +31,8 @@ func New(file string, logger *log.Logger) store.Store {
 	mx := new(sync.RWMutex)
 	dbUpdate := make(chan *bdb.BerkeleyDB)
 
-	dataNodeQuit := make(chan bool)
-	dataNodeWg := &sync.WaitGroup{}
-
-	dataLoaderQuit := make(chan bool)
-	dataLoaderWg := &sync.WaitGroup{}
+	quit := make(chan bool)
+	wg := &sync.WaitGroup{}
 
 	baseDir := filepath.Dir(file)
 	loader := store.NewLoader(baseDir, logger)
@@ -49,87 +42,43 @@ func New(file string, logger *log.Logger) store.Store {
 	}
 
 	s := &Store{
-		file:           file,
-		data:           data,
-		mx:             mx,
-		db:             nil,
-		loader:         loader,
-		logger:         logger,
-		dataNodeQuit:   dataNodeQuit,
-		dataNodeWg:     dataNodeWg,
-		dataLoaderQuit: dataLoaderQuit,
-		dataLoaderWg:   dataLoaderWg,
+		file:   file,
+		data:   data,
+		mx:     mx,
+		db:     nil,
+		loader: loader,
+		logger: logger,
+		quit:   quit,
+		wg:     wg,
 	}
 
 	boot := make(chan bool)
 
-	dataNodeWg.Add(1)
+	wg.Add(1)
 	go s.startDataNode(boot, dbUpdate)
-	<-boot
 
-	dataLoaderWg.Add(1)
-	go s.startDataLoader(boot, dbUpdate)
 	<-boot
-
 	close(boot)
 
 	return s
 }
 
 func (s *Store) startDataNode(boot chan<- bool, dbIn <-chan *bdb.BerkeleyDB) {
-	defer s.dataNodeWg.Done()
-
-	boot <- true
-	s.logger.Print("-> data node started!")
-
-	for {
-		select {
-		case newDB := <-dbIn:
-			s.mx.Lock()
-			oldDB := s.db
-			s.db = newDB
-			s.mx.Unlock()
-			if oldDB != nil {
-				oldDB.Close(0)
-				oldDB = nil
-				if err := s.loader.CleanOldDirs(); err != nil {
-					s.logger.Print("-> data node failed cleaning old directory: ", err)
-				}
-			}
-			s.data = make(Data)
-			s.logger.Print("-> data node updated!")
-		case <-s.dataNodeQuit:
-			if s.db != nil {
-				s.db.Close(0)
-				s.db = nil
-			}
-			s.logger.Print("-> data node finished!")
-			return
-		}
-	}
-}
-
-func (s Store) startDataLoader(boot chan<- bool, dbOut chan<- *bdb.BerkeleyDB) {
-	defer s.dataLoaderWg.Done()
+	defer s.wg.Done()
 
 	d := 5 * time.Second
 	watcher := store.NewWatcher(s.file, d, store.CheckMD5Sum, s.logger)
 
 	if watcher.IsLoadable() {
-		if nextFile, err := s.loader.MoveFileToNextDir(s.file); err != nil {
-			s.logger.Print("-> data loader failed moving file to store directory: ", err)
+		if db, err := LoadBDB(s.loader, s.file); err != nil {
+			s.logger.Print("-> data loader filed: ", err)
 		} else {
-			s.logger.Print("-> data loader reading data from file: ", nextFile)
-			if db, err := OpenBDB(nextFile); err != nil {
-				s.logger.Print("-> data loader failed reading data from file: ", err)
-			} else {
-				dbOut <- db
-			}
+			s.db = db
 		}
 	}
 
 	boot <- true
-	s.logger.Print("-> data loader started!")
+	s.logger.Print("-> data node started!")
 
 	update := make(chan bool)
 	quit := make(chan bool)
@@ -141,22 +90,32 @@ func (s Store) startDataLoader(boot chan<- bool, dbOut chan<- *bdb.BerkeleyDB) {
 	for {
 		select {
 		case <-update:
-			if nextFile, err := s.loader.MoveFileToNextDir(s.file); err != nil {
-				s.logger.Print("-> data loader failed moving file to store directory: ", err)
+			s.logger.Print("-> data node ready to update!")
+			if db, err := LoadBDB(s.loader, s.file); err != nil {
+				s.logger.Print("-> data node failed loading db: ", err)
 			} else {
-				s.logger.Print("-> data loader reading data from file: ", nextFile)
-				if db, err := OpenBDB(nextFile); err != nil {
-					s.logger.Print("-> data loader failed reading data from file: ", err)
-				} else {
-					dbOut <- db
+				s.mx.Lock()
+				oldDB := s.db
+				s.db = db
+				s.data = make(Data)
+				s.mx.Unlock()
+				s.logger.Print("-> data node opened a new db handle!")
+				if oldDB != nil {
+					oldDB.Close(0)
+					oldDB = nil
+					s.logger.Print("-> data node closed old db handle!")
+					if err := s.loader.CleanOldDirs(); err != nil {
+						s.logger.Print("-> data node failed cleaning old directory: ", err)
+					}
 				}
+				s.logger.Print("-> data node updated!")
 			}
-		case <-s.dataLoaderQuit:
-			quit <- true
-			close(quit)
-			wg.Wait()
-			close(update)
-			s.logger.Print("-> data loader finished!")
+		case <-s.quit:
+			if s.db != nil {
+				s.db.Close(0)
+				s.db = nil
+			}
+			s.logger.Print("-> data node finished!")
 			return
 		}
 	}
@@ -184,15 +143,24 @@ func (s *Store) Get(key []byte) ([]byte, error) {
 
 // Shutdown terminates a store
 func (s Store) Shutdown() error {
-	s.dataLoaderQuit <- true
-	close(s.dataLoaderQuit)
-	s.dataLoaderWg.Wait()
-
-	s.dataNodeQuit <- true
-	close(s.dataNodeQuit)
-	s.dataNodeWg.Wait()
+	s.quit <- true
+	close(s.quit)
+	s.wg.Wait()
 
 	return nil
+}
+
+// LoadBDB moves file into next store dir, opens BDB handle, and returns
+func LoadBDB(loader *store.Loader, file string) (*bdb.BerkeleyDB, error) {
+	nextFile, err := loader.MoveFileToNextDir(file)
+	if err != nil {
+		return nil, err
+	}
+	db, err := OpenBDB(nextFile)
+	if err != nil {
+		return nil, err
+	}
+	return db, nil
 }
 
 // OpenBDB creates a BDB handle for given file

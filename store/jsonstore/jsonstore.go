@@ -86,15 +86,16 @@ func (s *Store) startDataNode(boot chan<- bool, dataIn <-chan Data) {
 	for {
 		select {
 		case <-update:
-			s.logger.Print("-> data node updated!")
+			s.logger.Print("-> data node ready to update!")
 			if data, err := LoadData(s.loader, s.file); err != nil {
-				s.logger.Print("-> data loader failed: ", err)
+				s.logger.Print("-> data node failed loading data: ", err)
 			} else {
 				s.data = data
 				s.logger.Print("-> data node succeeded loading new data")
 				if err := s.loader.CleanOldDirs(); err != nil {
 					s.logger.Print("-> data node failed cleaning old directory: ", err)
 				}
+				s.logger.Print("-> data node updated!")
 			}
 		case <-s.quit:
 			quit <- true
