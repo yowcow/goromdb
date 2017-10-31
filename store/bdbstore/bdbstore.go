@@ -78,7 +78,7 @@ func (s *Store) startDataNode(boot chan<- bool, dbIn <-chan *bdb.BerkeleyDB) {
 	}
 
 	boot <- true
-	s.logger.Print("data node started!")
+	s.logger.Print("data node started")
 
 	update := make(chan bool)
 	quit := make(chan bool)
