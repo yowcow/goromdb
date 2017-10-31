@@ -15,17 +15,26 @@ import (
 	memcachedb_bdb "github.com/yowcow/goromdb/store/memcachedb/bdbstore"
 )
 
+var Version string
+
 func main() {
 	var addr string
 	var protoBackend string
 	var storeBackend string
 	var file string
+	var version bool
 
-	flag.StringVar(&addr, "addr", ":11211", "Address to bind to")
+	flag.StringVar(&addr, "addr", ":11211", "address to bind to")
 	flag.StringVar(&protoBackend, "proto", "memcached", "Protocol: memcached")
-	flag.StringVar(&storeBackend, "store", "bdb", "Store: json, bdb, memcachedb-bdb")
-	flag.StringVar(&file, "file", "./data/sample-bdb.db", "Data file")
+	flag.StringVar(&storeBackend, "store", "memcachedb-bdb", "Store: json, bdb, memcachedb-bdb")
+	flag.StringVar(&file, "file", "/tmp/goromdb", "data file")
+	flag.BoolVar(&version, "version", false, "print version")
 	flag.Parse()
+
+	if version {
+		fmt.Println("goromdb", Version)
+		return
+	}
 
 	logger := log.New(os.Stdout, "", log.LstdFlags|log.Lshortfile)
 
