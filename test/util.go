@@ -9,7 +9,7 @@ import (
 
 // CreateStoreDir creates a temporary data store directory for testing
 func CreateStoreDir() (string, error) {
-	dir, err := ioutil.TempDir(os.TempDir(), "bdbstore-test")
+	dir, err := ioutil.TempDir(os.TempDir(), "goromdb-test")
 	if err != nil {
 		return "", err
 	}
