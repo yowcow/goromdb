@@ -1,7 +1,7 @@
 BINARY = goromdb
 WORKDIR = /go/src/github.com/yowcow/$(BINARY)
-
-OS = alpine 1.8-jessie stretch
+OS = 1.8-jessie 1.9-alpine 1.9-stretch
+VERSION ?= $(shell git log --oneline -n 1 | awk '{ print $$1 }')
 
 all: $(addprefix docker-pull/,$(OS)) $(addprefix docker-build/,$(OS))
 
@@ -18,7 +18,7 @@ go-build/%:
 		-v `pwd`/../:$(WORKDIR) \
 		-w $(WORKDIR) \
 		$(BINARY):$* \
-		sh -c 'mkdir -p docker/build && go build -o docker/build/$(BINARY).$*'
+		sh -c 'mkdir -p docker/build && go build -ldflags "-X main.Version=$(VERSION)" -o docker/build/$(BINARY)-$(VERSION)-$*'
 
 clean:
 	rm -rf build
