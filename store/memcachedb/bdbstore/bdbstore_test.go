@@ -77,7 +77,7 @@ func TestGet_on_non_existing_key(t *testing.T) {
 	}
 	defer os.RemoveAll(dir)
 
-	file, err := test.CreateStoreDir()
+	file, err := test.CopyDBFile(dir, sampleDBFile)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -109,7 +109,7 @@ func TestGet_on_malformed_memcachedb_value(t *testing.T) {
 	store := &Store{proxy, logger}
 
 	val, err := store.Get([]byte("foo"))
-	re := regexp.MustCompile("deserialize failed for key 'foo' with error:")
+	re := regexp.MustCompile("failed deserializing a value for key 'foo' with error:")
 
 	assert.Nil(t, val)
 	assert.Equal(t, "failed reading memcachedb binary body: EOF", err.Error())

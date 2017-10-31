@@ -38,7 +38,7 @@ func New(file string, logger *log.Logger) store.Store {
 	loader := store.NewLoader(baseDir, logger)
 
 	if err := loader.BuildStoreDirs(); err != nil {
-		logger.Print("-> store failed creating directories: ", err)
+		logger.Print("store failed creating directories: ", err)
 	}
 
 	s := &Store{
@@ -71,14 +71,14 @@ func (s *Store) startDataNode(boot chan<- bool, dbIn <-chan *bdb.BerkeleyDB) {
 
 	if watcher.IsLoadable() {
 		if db, err := LoadBDB(s.loader, s.file); err != nil {
-			s.logger.Print("-> data loader filed: ", err)
+			s.logger.Print("data node failed loading a new db: ", err)
 		} else {
 			s.db = db
 		}
 	}
 
 	boot <- true
-	s.logger.Print("-> data node started!")
+	s.logger.Print("data node started!")
 
 	update := make(chan bool)
 	quit := make(chan bool)
@@ -90,32 +90,32 @@ func (s *Store) startDataNode(boot chan<- bool, dbIn <-chan *bdb.BerkeleyDB) {
 	for {
 		select {
 		case <-update:
-			s.logger.Print("-> data node ready to update!")
+			s.logger.Print("data node found update")
 			if db, err := LoadBDB(s.loader, s.file); err != nil {
-				s.logger.Print("-> data node failed loading db: ", err)
+				s.logger.Print("data node failed loading a new db: ", err)
 			} else {
 				s.mx.Lock()
 				oldDB := s.db
 				s.db = db
 				s.data = make(Data)
 				s.mx.Unlock()
-				s.logger.Print("-> data node opened a new db handle!")
+				s.logger.Print("data node succeeded loading a new db")
 				if oldDB != nil {
 					oldDB.Close(0)
 					oldDB = nil
-					s.logger.Print("-> data node closed old db handle!")
+					s.logger.Print("data node succeeded closing an old db")
 					if err := s.loader.CleanOldDirs(); err != nil {
-						s.logger.Print("-> data node failed cleaning old directory: ", err)
+						s.logger.Print("data node failed cleaning old directories: ", err)
 					}
 				}
-				s.logger.Print("-> data node updated!")
+				s.logger.Print("data node updated")
 			}
 		case <-s.quit:
 			if s.db != nil {
 				s.db.Close(0)
 				s.db = nil
 			}
-			s.logger.Print("-> data node finished!")
+			s.logger.Print("data node finished")
 			return
 		}
 	}

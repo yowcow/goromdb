@@ -143,7 +143,7 @@ func TestWatcher_with_invalid_checksum(t *testing.T) {
 	quit <- true
 	wg.Wait()
 
-	re := regexp.MustCompile("watcher file checksum verification failed")
+	re := regexp.MustCompile("watcher checksum verification failed")
 
 	assert.True(t, re.Match(buf.Bytes()))
 }
@@ -214,7 +214,7 @@ func TestWatcher_with_valid_checksum(t *testing.T) {
 	quit <- true
 	wg.Wait()
 
-	re := regexp.MustCompile("watcher file checksum verification succeeded")
+	re := regexp.MustCompile("watcher checksum verification succeeded")
 
 	assert.True(t, re.Match(buf.Bytes()))
 }
