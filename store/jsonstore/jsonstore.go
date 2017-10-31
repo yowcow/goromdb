@@ -36,7 +36,7 @@ func New(file string, logger *log.Logger) store.Store {
 	loader := store.NewLoader(baseDir, logger)
 
 	if err := loader.BuildStoreDirs(); err != nil {
-		logger.Print("-> store failed creating directories: ", err)
+		logger.Print("store failed creating directories: ", err)
 	}
 
 	s := &Store{
@@ -67,14 +67,14 @@ func (s *Store) startDataNode(boot chan<- bool, dataIn <-chan Data) {
 
 	if watcher.IsLoadable() {
 		if data, err := LoadData(s.loader, s.file); err != nil {
-			s.logger.Print("-> data loader failed: ", err)
+			s.logger.Print("data node failed loading new data: ", err)
 		} else {
 			s.data = data
 		}
 	}
 
 	boot <- true
-	s.logger.Print("-> data node started!")
+	s.logger.Print("data node started")
 
 	update := make(chan bool)
 	quit := make(chan bool)
@@ -86,23 +86,23 @@ func (s *Store) startDataNode(boot chan<- bool, dataIn <-chan Data) {
 	for {
 		select {
 		case <-update:
-			s.logger.Print("-> data node ready to update!")
+			s.logger.Print("data node found update")
 			if data, err := LoadData(s.loader, s.file); err != nil {
-				s.logger.Print("-> data node failed loading data: ", err)
+				s.logger.Print("data node failed loading new data: ", err)
 			} else {
 				s.data = data
-				s.logger.Print("-> data node succeeded loading new data")
+				s.logger.Print("data node succeeded loading new data")
 				if err := s.loader.CleanOldDirs(); err != nil {
-					s.logger.Print("-> data node failed cleaning old directory: ", err)
+					s.logger.Print("data node failed cleaning old directory: ", err)
 				}
-				s.logger.Print("-> data node updated!")
+				s.logger.Print("data node updated")
 			}
 		case <-s.quit:
 			quit <- true
 			close(quit)
 			wg.Wait()
 			close(update)
-			s.logger.Print("-> data node finished!")
+			s.logger.Print("data node finished")
 			return
 		}
 	}

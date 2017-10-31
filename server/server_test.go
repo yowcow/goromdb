@@ -131,7 +131,7 @@ func TestServer(t *testing.T) {
 	assert.Nil(t, conn.Close())
 	assert.Nil(t, server.Shutdown())
 
-	re := regexp.MustCompile("parse error: invalid command")
+	re := regexp.MustCompile("server failed parsing a line: invalid command")
 
 	assert.True(t, re.Match(buf.Bytes()))
 }

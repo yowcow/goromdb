@@ -41,7 +41,7 @@ func main() {
 
 	logger.Print(
 		fmt.Sprintf(
-			"Booting romdb server listening to address %s that talks %s protocol, with backend store %s at file path %s",
+			"booting romdb server (address: %s, protocol: %s, store: %s, file: %s)",
 			addr, protoBackend, storeBackend, file,
 		),
 	)

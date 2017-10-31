@@ -12,15 +12,13 @@ import (
 
 // Server represents a server
 type Server struct {
-	proto string
-	addr  string
-
+	proto    string
+	addr     string
 	protocol protocol.Protocol
 	store    store.Store
-
-	quit   chan bool
-	wg     *sync.WaitGroup
-	logger *log.Logger
+	logger   *log.Logger
+	quit     chan bool
+	wg       *sync.WaitGroup
 }
 
 // New creates a new server
@@ -32,9 +30,9 @@ func New(proto, addr string, protocol protocol.Protocol, store store.Store, logg
 		addr,
 		protocol,
 		store,
+		logger,
 		quit,
 		wg,
-		logger,
 	}
 }
 
@@ -54,9 +52,8 @@ func (s Server) Start() error {
 	go func(l net.Listener, n chan net.Conn) {
 		for {
 			conn, err := l.Accept()
-
 			if err != nil {
-				s.logger.Print("-> failed accepting a new conn: ", err)
+				s.logger.Print("server failed accepting a new conn: ", err)
 			} else {
 				n <- conn
 			}
@@ -64,16 +61,16 @@ func (s Server) Start() error {
 	}(ln, nc)
 
 	s.wg.Add(1)
-	s.logger.Print("server now listening to addr: ", s.addr)
+	s.logger.Print("server started listening to addr: ", s.addr)
 
 	for {
 		select {
 		case conn := <-nc:
-			s.logger.Print("-> server accepted a new conn")
+			s.logger.Print("server accepted a new conn")
 			go s.handleConn(conn)
 		case <-s.quit:
-			s.logger.Print("-> server shutting down")
 			s.store.Shutdown()
+			s.logger.Print("server finished")
 			return nil
 		}
 	}
@@ -91,17 +88,14 @@ func (s Server) handleConn(conn net.Conn) {
 	defer conn.Close()
 
 	r := bufio.NewReader(conn)
-
 	for {
 		line, _, err := r.ReadLine()
-
 		if err != nil {
-			s.logger.Print("-> read error:", err)
+			s.logger.Print("server failed reading a line:", err)
 			break
 		}
-
 		if keys, err := s.protocol.Parse(line); err != nil {
-			s.logger.Print("-> parse error: ", err)
+			s.logger.Print("server failed parsing a line: ", err)
 		} else {
 			for _, k := range keys {
 				if v, _ := s.store.Get(k); v != nil {
@@ -109,7 +103,6 @@ func (s Server) handleConn(conn net.Conn) {
 				}
 			}
 		}
-
 		s.protocol.Finish(conn)
 	}
 }

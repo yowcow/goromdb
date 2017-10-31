@@ -37,7 +37,7 @@ func NewWatcher(
 func (w Watcher) Start(update chan<- bool, quit <-chan bool, wg *sync.WaitGroup) {
 	defer wg.Done()
 	timer := time.NewTimer(w.duration)
-	w.logger.Print("-> watcher started!")
+	w.logger.Print("watcher started")
 	for {
 		select {
 		case <-timer.C:
@@ -49,7 +49,7 @@ func (w Watcher) Start(update chan<- bool, quit <-chan bool, wg *sync.WaitGroup)
 			if !timer.Stop() {
 				<-timer.C
 			}
-			w.logger.Print("-> watcher finished!")
+			w.logger.Print("watcher finished")
 			return
 		}
 	}
@@ -63,13 +63,13 @@ func (w *Watcher) IsLoadable() bool {
 				w.lastModified = fi.ModTime()
 				return true
 			}
-			w.logger.Print("-> watcher file checksum verification in progress")
+			w.logger.Print("watcher checksum verification in progress...")
 			if err = w.checksum(w.file); err == nil {
-				w.logger.Print("-> watcher file checksum verification succeeded")
+				w.logger.Print("watcher checksum verification succeeded")
 				w.lastModified = fi.ModTime()
 				return true
 			}
-			w.logger.Print("-> watcher file checksum verification failed: ", err)
+			w.logger.Print("watcher checksum verification failed: ", err)
 			return false
 		}
 	}
