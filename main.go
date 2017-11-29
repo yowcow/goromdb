@@ -37,13 +37,13 @@ func main() {
 	}
 
 	logger := log.New(os.Stdout, "", log.LstdFlags|log.Lshortfile)
-	ctx := context.Background()
 
 	proto, err := createProtocol(protoBackend)
 	if err != nil {
 		panic(err)
 	}
 
+	ctx, cancel := context.WithCancel(context.Background())
 	wcr := watcher.New(file, 5000, logger)
 	filein := wcr.Start(ctx)
 
@@ -51,7 +51,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	st.Start(ctx)
+	done := st.Start()
 
 	logger.Printf(
 		"booting goromdb (address: %s, protocol: %s, store: %s, file: %s)",
@@ -64,6 +64,9 @@ func main() {
 		logger.Printf("failed booting goromdb: %s", err.Error())
 		os.Exit(1)
 	}
+	cancel()
+	<-done
+
 }
 
 func createProtocol(protoBackend string) (protocol.Protocol, error) {
