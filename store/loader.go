@@ -2,7 +2,6 @@ package store
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 )
@@ -15,73 +14,63 @@ const DirPerm = 0755
 
 // Loader represents a loader
 type Loader struct {
-	baseDir      string
-	storeDirs    []string
-	currentIndex int
-	logger       *log.Logger
+	basedir  string
+	dirs     []string
+	curindex int
 }
 
 // NewLoader creates a new loader
-func NewLoader(baseDir string, logger *log.Logger) *Loader {
-	storeDirs := make([]string, DirCount)
-	return &Loader{
-		baseDir,
-		storeDirs,
-		0,
-		logger,
-	}
-}
-
-// BuildStoreDirs creates store subdirectories and update loader
-func (l *Loader) BuildStoreDirs() error {
-	storeDirs, err := BuildDirs(l.baseDir, DirCount)
+func NewLoader(basedir string) (*Loader, error) {
+	dirs, err := buildDirs(basedir, DirCount)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	l.storeDirs = storeDirs
-	return nil
+	return &Loader{
+		basedir,
+		dirs,
+		0,
+	}, nil
 }
 
-// MoveFileToNextDir moves given file into next subdirectory, and returns the filepath
-func (l *Loader) MoveFileToNextDir(file string) (string, error) {
-	nextIndex := l.currentIndex + 1
-	if nextIndex == len(l.storeDirs) {
-		nextIndex = 0
+func buildDirs(basedir string, count int) ([]string, error) {
+	fi, err := os.Stat(basedir)
+	if err != nil {
+		return nil, err
 	}
-	nextDir := l.storeDirs[nextIndex]
-	base := filepath.Base(file)
-	nextFile := filepath.Join(nextDir, base)
-	if err := os.Rename(file, nextFile); err != nil {
-		return "", err
+	if fi != nil && !fi.IsDir() {
+		return nil, fmt.Errorf("path '%s' exists and not dir", basedir)
 	}
-	l.currentIndex = nextIndex
-	return nextFile, nil
-}
 
-// CleanOldDirs remove and recreate subdirectories not currently in use
-func (l Loader) CleanOldDirs() error {
-	for i, dir := range l.storeDirs {
-		if i != l.currentIndex {
-			if err := os.RemoveAll(dir); err != nil {
-				return err
-			}
-			if err := os.MkdirAll(dir, DirPerm); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
-// BuildDirs creates subdirectories into given directory
-func BuildDirs(baseDir string, count int) ([]string, error) {
 	dirs := make([]string, count)
-	for i := 0; i < DirCount; i++ {
-		dir := filepath.Join(baseDir, fmt.Sprintf("db0%d", i))
-		if err := os.MkdirAll(dir, DirPerm); err != nil {
-			return nil, err
-		}
+	for i := 0; i < count; i++ {
+		dir := filepath.Join(basedir, fmt.Sprintf("data%02d", i))
 		dirs[i] = dir
+		if _, err := os.Stat(dir); err != nil {
+			if err = os.Mkdir(dir, DirPerm); err != nil {
+				return nil, err
+			}
+		}
 	}
 	return dirs, nil
+}
+
+// DropIn drops given file into next subdirectory, and returns the filepath
+func (l *Loader) DropIn(file string) (string, error) {
+	nextindex := l.curindex + 1
+	if nextindex >= len(l.dirs) {
+		nextindex = 0
+	}
+	base := filepath.Base(file)
+	nextdir := l.dirs[nextindex]
+	nextfile := filepath.Join(nextdir, base)
+	if err := os.Rename(file, nextfile); err != nil {
+		return "", err
+	}
+	curdir := l.dirs[l.curindex]
+	curfile := filepath.Join(curdir, base)
+	if _, err := os.Stat(curfile); err == nil {
+		os.Remove(curfile)
+	}
+	l.curindex = nextindex
+	return nextfile, nil
 }
