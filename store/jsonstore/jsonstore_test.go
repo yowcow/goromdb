@@ -2,10 +2,7 @@ package jsonstore
 
 import (
 	"bytes"
-	"context"
-	_ "fmt"
 	"log"
-	_ "os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -20,37 +17,37 @@ func TestNew(t *testing.T) {
 	assert.Nil(t, err)
 }
 
-func TestStart(t *testing.T) {
+func TestLoad(t *testing.T) {
 	filein := make(chan string)
 	logbuf := new(bytes.Buffer)
 	logger := log.New(logbuf, "", 0)
 	s, _ := New(filein, logger)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	done := s.Start(ctx)
-	cancel()
-	<-done
+	type Case struct {
+		input       string
+		expectError bool
+		subtest     string
+	}
+	cases := []Case{
+		{"invalid.json", true, "invalid json"},
+		{"valid.json", false, "valid json"},
+	}
+
+	for _, c := range cases {
+		t.Run(c.subtest, func(t *testing.T) {
+			err := s.Load(c.input)
+
+			assert.Equal(t, c.expectError, err != nil)
+		})
+	}
 }
 
-func TestLoadInvalidData(t *testing.T) {
+func TestGet(t *testing.T) {
 	filein := make(chan string)
 	logbuf := new(bytes.Buffer)
 	logger := log.New(logbuf, "", 0)
 	s, _ := New(filein, logger)
-
-	err := s.Load("invalid.json")
-
-	assert.NotNil(t, err)
-}
-
-func TestLoadValidData(t *testing.T) {
-	filein := make(chan string)
-	logbuf := new(bytes.Buffer)
-	logger := log.New(logbuf, "", 0)
-	s, _ := New(filein, logger)
-	err := s.Load("valid.json")
-
-	assert.Nil(t, err)
+	_ = s.Load("valid.json")
 
 	type Case struct {
 		input, expected []byte
@@ -73,4 +70,19 @@ func TestLoadValidData(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestStart(t *testing.T) {
+	filein := make(chan string)
+	logbuf := new(bytes.Buffer)
+	logger := log.New(logbuf, "", 0)
+	s, _ := New(filein, logger)
+	done := s.Start()
+
+	for i := 0; i < 10; i++ {
+		filein <- "valid.json"
+	}
+
+	close(filein)
+	<-done
 }

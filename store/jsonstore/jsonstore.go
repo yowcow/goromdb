@@ -1,7 +1,6 @@
 package jsonstore
 
 import (
-	"context"
 	"encoding/json"
 	"log"
 	"os"
@@ -29,28 +28,23 @@ func New(filein <-chan string, logger *log.Logger) (store.Store, error) {
 	}, nil
 }
 
-func (s *Store) Start(ctx context.Context) <-chan bool {
+func (s *Store) Start() <-chan bool {
 	done := make(chan bool)
-	go s.start(ctx, done)
+	go s.start(done)
 	return done
 }
 
-func (s *Store) start(ctx context.Context, done chan<- bool) {
+func (s *Store) start(done chan<- bool) {
 	defer func() {
 		s.logger.Println("jsonstore finished")
 		close(done)
 	}()
 	s.logger.Println("jsonstore started")
-	for {
-		select {
-		case file := <-s.filein:
-			if err := s.Load(file); err != nil {
-				s.logger.Printf("jsonstore failed loading data from '%s': %s", file, err.Error())
-			} else {
-				s.logger.Printf("jsonstore succeeded loading data from '%s'", file)
-			}
-		case <-ctx.Done():
-			return
+	for file := range s.filein {
+		if err := s.Load(file); err != nil {
+			s.logger.Printf("jsonstore failed loading data from '%s': %s", file, err.Error())
+		} else {
+			s.logger.Printf("jsonstore succeeded loading data from '%s'", file)
 		}
 	}
 }

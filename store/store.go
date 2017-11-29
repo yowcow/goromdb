@@ -1,13 +1,12 @@
 package store
 
 import (
-	"context"
 	"fmt"
 )
 
 // Store represents an interface for a store
 type Store interface {
-	Start(context.Context) <-chan bool
+	Start() <-chan bool
 	Load(string) error
 	Get([]byte) ([]byte, error)
 }
