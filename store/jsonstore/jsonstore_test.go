@@ -3,129 +3,86 @@ package jsonstore
 import (
 	"bytes"
 	"log"
-	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/yowcow/goromdb/store"
-	"github.com/yowcow/goromdb/test"
 )
 
-var sampleDBFile = "../../data/store/sample-data.json"
-
-func TestLoadJSON_returns_error_on_non_existing_file(t *testing.T) {
-	_, err := LoadJSON("./hoge/fuga")
-
-	assert.NotNil(t, err)
-}
-
-func TestLoadJSON_returns_error_on_invalid_JSON(t *testing.T) {
-	_, err := LoadJSON("./jsonstore-invalid.json")
-
-	assert.NotNil(t, err)
-}
-
-func TestLoadData_returns_data(t *testing.T) {
-	dir, err := test.CreateStoreDir()
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.RemoveAll(dir)
-
-	buf := new(bytes.Buffer)
-	logger := log.New(buf, "", log.LstdFlags)
-	loader := store.NewLoader(dir, logger)
-	err = loader.BuildStoreDirs()
-	if err != nil {
-		t.Fatal(err)
-	}
-	file, err := test.CopyDBFile(dir, sampleDBFile)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	data, err := LoadData(loader, file)
-
-	assert.Nil(t, err)
-	assert.Equal(t, "hoge!", data["hoge"])
-}
-
 func TestNew(t *testing.T) {
-	dir, err := test.CreateStoreDir()
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.RemoveAll(dir)
-
-	file, err := test.CopyDBFile(dir, sampleDBFile)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	buf := new(bytes.Buffer)
-	logger := log.New(buf, "", log.Lshortfile)
-	store := New(file, logger)
-
-	assert.NotNil(t, store)
-	assert.Nil(t, store.Shutdown())
-}
-
-func TestNew_with_non_existing_file(t *testing.T) {
-	dir, err := test.CreateStoreDir()
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.RemoveAll(dir)
-
-	buf := new(bytes.Buffer)
-	logger := log.New(buf, "", log.Lshortfile)
-	store := New(filepath.Join(dir, "hogehoge.txt"), logger)
-
-	assert.NotNil(t, store)
-	assert.Nil(t, store.Shutdown())
-}
-
-func TestGet_on_existing_key(t *testing.T) {
-	dir, err := test.CreateStoreDir()
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.RemoveAll(dir)
-
-	file, err := test.CopyDBFile(dir, sampleDBFile)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	buf := new(bytes.Buffer)
-	logger := log.New(buf, "", log.Lshortfile)
-	store := New(file, logger)
-	value, err := store.Get([]byte("hoge"))
+	filein := make(chan string)
+	logbuf := new(bytes.Buffer)
+	logger := log.New(logbuf, "", 0)
+	_, err := New(filein, logger)
 
 	assert.Nil(t, err)
-	assert.Equal(t, "hoge!", string(value))
-	assert.Nil(t, store.Shutdown())
 }
 
-func TestGet_on_non_existing_key(t *testing.T) {
-	dir, err := test.CreateStoreDir()
-	if err != nil {
-		t.Fatal(err)
+func TestLoad(t *testing.T) {
+	filein := make(chan string)
+	logbuf := new(bytes.Buffer)
+	logger := log.New(logbuf, "", 0)
+	s, _ := New(filein, logger)
+
+	type Case struct {
+		input       string
+		expectError bool
+		subtest     string
 	}
-	defer os.RemoveAll(dir)
-
-	file, err := test.CopyDBFile(dir, sampleDBFile)
-	if err != nil {
-		t.Fatal(err)
+	cases := []Case{
+		{"invalid.json", true, "invalid json"},
+		{"valid.json", false, "valid json"},
 	}
 
-	buf := new(bytes.Buffer)
-	logger := log.New(buf, "", log.Lshortfile)
-	store := New(file, logger)
-	value, err := store.Get([]byte("foobar"))
+	for _, c := range cases {
+		t.Run(c.subtest, func(t *testing.T) {
+			err := s.Load(c.input)
 
-	assert.Nil(t, value)
-	assert.NotNil(t, err)
-	assert.Nil(t, store.Shutdown())
+			assert.Equal(t, c.expectError, err != nil)
+		})
+	}
+}
+
+func TestGet(t *testing.T) {
+	filein := make(chan string)
+	logbuf := new(bytes.Buffer)
+	logger := log.New(logbuf, "", 0)
+	s, _ := New(filein, logger)
+	_ = s.Load("valid.json")
+
+	type Case struct {
+		input, expected []byte
+		subtest         string
+	}
+	cases := []Case{
+		{[]byte("foo"), nil, "non-existing key"},
+		{[]byte("hoge"), []byte("hogehoge"), "existing key: hoge"},
+		{[]byte("fuga"), []byte("fugafuga"), "existing key: fuga"},
+	}
+
+	for _, c := range cases {
+		t.Run(c.subtest, func(t *testing.T) {
+			actual, err := s.Get(c.input)
+
+			if c.expected == nil {
+				assert.NotNil(t, err)
+			} else {
+				assert.Equal(t, string(actual), string(c.expected))
+			}
+		})
+	}
+}
+
+func TestStart(t *testing.T) {
+	filein := make(chan string)
+	logbuf := new(bytes.Buffer)
+	logger := log.New(logbuf, "", 0)
+	s, _ := New(filein, logger)
+	done := s.Start()
+
+	for i := 0; i < 10; i++ {
+		filein <- "valid.json"
+	}
+
+	close(filein)
+	<-done
 }

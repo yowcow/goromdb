@@ -1,13 +1,52 @@
-package memcachedb
+package mdbstore
 
 import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
 	"io"
+	"log"
+
+	"github.com/yowcow/goromdb/store"
 )
 
 const _Zero uint8 = 0
+
+// Store represents a store for memcachedb
+type Store struct {
+	proxy  store.Store
+	logger *log.Logger
+}
+
+// New creates a store
+func New(proxy store.Store, logger *log.Logger) (store.Store, error) {
+	return &Store{proxy, logger}, nil
+}
+
+// Start starts backend store goroutine, and returns their error
+func (s Store) Start() <-chan bool {
+	return s.proxy.Start()
+}
+
+// Load loads file into backend store, and returns their error
+func (s Store) Load(file string) error {
+	return s.proxy.Load(file)
+}
+
+// Get returns a value from backend store after deserializing it into usable value
+func (s Store) Get(key []byte) ([]byte, error) {
+	val, err := s.proxy.Get(key)
+	if err != nil {
+		return nil, err
+	}
+	r := bytes.NewReader(val)
+	_, v, _, err := Deserialize(r)
+	if err != nil {
+		s.logger.Print("failed deserializing a value for key '", string(key), "' with error: ", err)
+		return nil, store.KeyNotFoundError(key)
+	}
+	return v, nil
+}
 
 // Serialize serializes given key and value into MemcacheDB format binary, and writes to writer
 func Serialize(w io.Writer, key, val []byte) error {

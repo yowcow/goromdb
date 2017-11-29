@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -10,9 +11,8 @@ import (
 	"github.com/yowcow/goromdb/protocol/memcachedprotocol"
 	"github.com/yowcow/goromdb/server"
 	"github.com/yowcow/goromdb/store"
-	"github.com/yowcow/goromdb/store/bdbstore"
 	"github.com/yowcow/goromdb/store/jsonstore"
-	memcachedb_bdb "github.com/yowcow/goromdb/store/memcachedb/bdbstore"
+	"github.com/yowcow/goromdb/watcher"
 )
 
 var Version string
@@ -25,9 +25,9 @@ func main() {
 	var version bool
 
 	flag.StringVar(&addr, "addr", ":11211", "address to bind to")
-	flag.StringVar(&protoBackend, "proto", "memcached", "Protocol: memcached")
-	flag.StringVar(&storeBackend, "store", "memcachedb-bdb", "Store: json, bdb, memcachedb-bdb")
-	flag.StringVar(&file, "file", "/tmp/goromdb", "data file")
+	flag.StringVar(&protoBackend, "proto", "memcached", "protocol: memcached")
+	flag.StringVar(&storeBackend, "store", "jsonstore", "store: jsonstore")
+	flag.StringVar(&file, "file", "/tmp/goromdb", "data file to load into store")
 	flag.BoolVar(&version, "version", false, "print version")
 	flag.Parse()
 
@@ -43,20 +43,30 @@ func main() {
 		panic(err)
 	}
 
-	store, err := createStore(storeBackend, file, logger)
+	ctx, cancel := context.WithCancel(context.Background())
+	wcr := watcher.New(file, 5000, logger)
+	filein := wcr.Start(ctx)
+
+	st, err := createStore(storeBackend, filein, logger)
 	if err != nil {
 		panic(err)
 	}
+	done := st.Start()
 
-	logger.Print(
-		fmt.Sprintf(
-			"booting romdb server (address: %s, protocol: %s, store: %s, file: %s)",
-			addr, protoBackend, storeBackend, file,
-		),
+	logger.Printf(
+		"booting goromdb (address: %s, protocol: %s, store: %s, file: %s)",
+		addr, protoBackend, storeBackend, file,
 	)
 
-	s := server.New("tcp", addr, proto, store, logger)
-	s.Start()
+	svr := server.New("tcp", addr, proto, st, logger)
+	err = svr.Start()
+	if err != nil {
+		logger.Printf("failed booting goromdb: %s", err.Error())
+		os.Exit(1)
+	}
+	cancel()
+	<-done
+
 }
 
 func createProtocol(protoBackend string) (protocol.Protocol, error) {
@@ -64,18 +74,14 @@ func createProtocol(protoBackend string) (protocol.Protocol, error) {
 	case "memcached":
 		return memcachedprotocol.New(), nil
 	default:
-		return nil, fmt.Errorf("don't know how to handle protoc '%s'", protoBackend)
+		return nil, fmt.Errorf("don't know how to handle protocol '%s'", protoBackend)
 	}
 }
 
-func createStore(storeBackend, file string, logger *log.Logger) (store.Store, error) {
+func createStore(storeBackend string, filein <-chan string, logger *log.Logger) (store.Store, error) {
 	switch storeBackend {
-	case "bdb":
-		return bdbstore.New(file, logger), nil
-	case "json":
-		return jsonstore.New(file, logger), nil
-	case "memcachedb-bdb":
-		return memcachedb_bdb.New(file, logger), nil
+	case "jsonstore":
+		return jsonstore.New(filein, logger)
 	default:
 		return nil, fmt.Errorf("don't know how to handle store '%s'", storeBackend)
 	}

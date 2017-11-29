@@ -1,4 +1,4 @@
-package bdbstore
+package mdbstore
 
 import (
 	"bytes"
@@ -8,19 +8,53 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/yowcow/goromdb/store/bdbstore"
 	"github.com/yowcow/goromdb/testutil"
 )
 
-var sampleDBFile = "../../data/store/sample-bdb.db"
+var sampleDBFile = "../../data/store/sample-memcachedb-bdb.db"
+
+func TestSerialize_and_Deserialize(t *testing.T) {
+	buf := new(bytes.Buffer)
+	err := Serialize(buf, []byte("hoge"), []byte("ほげほげ!!"))
+
+	assert.Nil(t, err)
+
+	r := bytes.NewReader(buf.Bytes())
+	key, val, len, err := Deserialize(r)
+
+	assert.Nil(t, err)
+	assert.Equal(t, []byte("hoge"), key)
+	assert.Equal(t, []byte("ほげほげ!!"), val)
+	assert.Equal(t, 14, len)
+}
+
+func TestDeserialize_returns_header_error(t *testing.T) {
+	r := bytes.NewReader([]byte(""))
+	_, _, _, err := Deserialize(r)
+
+	assert.Equal(t, "failed reading memcachedb binary headers: EOF", err.Error())
+}
+
+func TestDeserialize_returns_body_error(t *testing.T) {
+	r := bytes.NewReader([]byte("hogefuga"))
+	_, _, _, err := Deserialize(r)
+
+	assert.Equal(t, "failed reading memcachedb binary body: EOF", err.Error())
+}
 
 func TestNew(t *testing.T) {
 	dir := testutil.CreateTmpDir()
 	defer os.RemoveAll(dir)
 
 	filein := make(chan string)
-	buf := new(bytes.Buffer)
-	logger := log.New(buf, "", 0)
-	_, err := New(filein, dir, logger)
+	logbuf := new(bytes.Buffer)
+	logger := log.New(logbuf, "", 0)
+	bdb, err := bdbstore.New(filein, dir, logger)
+
+	assert.Nil(t, err)
+
+	_, err = New(bdb, logger)
 
 	assert.Nil(t, err)
 }
@@ -30,9 +64,10 @@ func TestLoad(t *testing.T) {
 	defer os.RemoveAll(dir)
 
 	filein := make(chan string)
-	buf := new(bytes.Buffer)
-	logger := log.New(buf, "", 0)
-	s, _ := New(filein, dir, logger)
+	logbuf := new(bytes.Buffer)
+	logger := log.New(logbuf, "", 0)
+	bdb, _ := bdbstore.New(filein, dir, logger)
+	mdb, _ := New(bdb, logger)
 
 	type Case struct {
 		input       string
@@ -41,30 +76,30 @@ func TestLoad(t *testing.T) {
 	}
 	cases := []Case{
 		{
+			dir,
+			true,
+			"loading dir fails",
+		},
+		{
 			sampleDBFile + ".hoge",
 			true,
-			"non-existing file fails",
+			"loading non-existing file fails",
 		},
 		{
 			"../../data/store/sample-data.json",
 			true,
-			"non-bdb file fails",
+			"loading non-bdb file fails",
 		},
 		{
 			sampleDBFile,
 			false,
-			"existing bdb file succeeds",
-		},
-		{
-			sampleDBFile,
-			false,
-			"another bdb file succeeds",
+			"loading bdb file succeeds",
 		},
 	}
 
 	for _, c := range cases {
 		t.Run(c.subtest, func(t *testing.T) {
-			err := s.Load(c.input)
+			err := mdb.Load(c.input)
 			assert.Equal(t, c.expectError, err != nil)
 		})
 	}
@@ -77,7 +112,8 @@ func TestGet(t *testing.T) {
 	filein := make(chan string)
 	logbuf := new(bytes.Buffer)
 	logger := log.New(logbuf, "", 0)
-	s, _ := New(filein, dir, logger)
+	bdb, _ := bdbstore.New(filein, dir, logger)
+	s, _ := New(bdb, logger)
 	s.Load(sampleDBFile)
 
 	type Case struct {
@@ -130,7 +166,9 @@ func TestStart(t *testing.T) {
 	filein := make(chan string)
 	logbuf := new(bytes.Buffer)
 	logger := log.New(logbuf, "", 0)
-	s, _ := New(filein, dir, logger)
+	bdb, _ := bdbstore.New(filein, dir, logger)
+	s, _ := New(bdb, logger)
+	s.Load(sampleDBFile)
 	done := s.Start()
 
 	file := filepath.Join(dir, "dropin.db")

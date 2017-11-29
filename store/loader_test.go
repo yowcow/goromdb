@@ -1,172 +1,123 @@
 package store
 
 import (
-	"bytes"
-	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/yowcow/goromdb/testutil"
 )
 
-func TestBuildDirs_on_existing_dir(t *testing.T) {
-	dir, err := ioutil.TempDir(os.TempDir(), "store-test")
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = os.MkdirAll(dir, 0755)
-	if err != nil {
-		t.Fatal(err)
-	}
+func TestBuildDirs(t *testing.T) {
+	dir := testutil.CreateTmpDir()
 	defer os.RemoveAll(dir)
 
-	dirs, err := BuildDirs(dir, 2)
-
-	assert.Nil(t, err)
-	assert.Equal(t, 2, len(dirs))
-	assert.Equal(t, filepath.Join(dir, "db00"), dirs[0])
-	assert.Equal(t, filepath.Join(dir, "db01"), dirs[1])
-
-	for _, dir := range dirs {
-		fi, err := os.Stat(dir)
-
-		assert.Nil(t, err)
-		assert.True(t, fi.IsDir())
+	type Case struct {
+		basedir      string
+		expectError  bool
+		expectedDirs []string
+		subtest      string
 	}
-}
-
-func TestBuildDirs_on_non_existing_dir(t *testing.T) {
-	dir, err := ioutil.TempDir(os.TempDir(), "store-test")
-	if err != nil {
-		t.Fatal(err)
+	cases := []Case{
+		{
+			"/tmp/hoge/fuga",
+			true,
+			nil,
+			"non-existing basedir fails",
+		},
+		{
+			dir,
+			false,
+			[]string{
+				filepath.Join(dir, "data00"),
+				filepath.Join(dir, "data01"),
+			},
+			"existing basedir succeeds",
+		},
+		{
+			dir,
+			false,
+			[]string{
+				filepath.Join(dir, "data00"),
+				filepath.Join(dir, "data01"),
+			},
+			"re-creating dirs succeeds",
+		},
 	}
-	defer os.RemoveAll(dir)
 
-	dirs, err := BuildDirs(dir, 2)
+	for _, c := range cases {
+		t.Run(c.subtest, func(t *testing.T) {
+			dirs, err := buildDirs(c.basedir, 2)
 
-	assert.Nil(t, err)
-	assert.Equal(t, 2, len(dirs))
-	assert.Equal(t, filepath.Join(dir, "db00"), dirs[0])
-	assert.Equal(t, filepath.Join(dir, "db01"), dirs[1])
-
-	for _, dir := range dirs {
-		fi, err := os.Stat(dir)
-
-		assert.Nil(t, err)
-		assert.True(t, fi.IsDir())
+			if c.expectError {
+				assert.NotNil(t, err)
+				assert.Nil(t, dirs)
+			} else {
+				assert.Nil(t, err)
+				for i, dir := range dirs {
+					assert.Equal(t, c.expectedDirs[i], dir)
+				}
+			}
+		})
 	}
 }
 
 func TestNewLoader(t *testing.T) {
-	dir, err := ioutil.TempDir(os.TempDir(), "store-test")
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = os.MkdirAll(dir, 0755)
-	if err != nil {
-		t.Fatal(err)
-	}
+	dir := testutil.CreateTmpDir()
 	defer os.RemoveAll(dir)
 
-	buf := new(bytes.Buffer)
-	logger := log.New(buf, "", log.LstdFlags)
-	loader := NewLoader(dir, logger)
+	loader, err := NewLoader(dir)
 
+	assert.Nil(t, err)
 	assert.NotNil(t, loader)
 }
 
-func TestLoader_BuildStoreDirs(t *testing.T) {
-	dir, err := ioutil.TempDir(os.TempDir(), "store-test")
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = os.MkdirAll(dir, 0755)
-	if err != nil {
-		t.Fatal(err)
-	}
+func TestDropIn(t *testing.T) {
+	dir := testutil.CreateTmpDir()
 	defer os.RemoveAll(dir)
 
-	buf := new(bytes.Buffer)
-	logger := log.New(buf, "", log.LstdFlags)
-	loader := NewLoader(dir, logger)
-
-	err = loader.BuildStoreDirs()
-
-	assert.Nil(t, err)
-}
-
-func TestLoader_MoveFileToNextDir(t *testing.T) {
-	dir, err := ioutil.TempDir(os.TempDir(), "store-test")
-	if err != nil {
-		t.Fatal(err)
+	type Case struct {
+		expectedFilepath string
+		expectedNotExist string
+		subtest          string
 	}
-	err = os.MkdirAll(dir, 0755)
-	if err != nil {
-		t.Fatal(err)
+	cases := []Case{
+		{
+			filepath.Join(dir, "data01", "dropped-in"),
+			filepath.Join(dir, "data00", "dropped-in"),
+			"1st drop-in stores into data01",
+		},
+		{
+			filepath.Join(dir, "data00", "dropped-in"),
+			filepath.Join(dir, "data01", "dropped-in"),
+			"2nd drop-in stores into data00",
+		},
+		{
+			filepath.Join(dir, "data01", "dropped-in"),
+			filepath.Join(dir, "data00", "dropped-in"),
+			"3rd drop-in stores into data01",
+		},
 	}
-	defer os.RemoveAll(dir)
 
-	buf := new(bytes.Buffer)
-	logger := log.New(buf, "", log.LstdFlags)
-	loader := NewLoader(dir, logger)
-	loader.BuildStoreDirs()
+	loader, _ := NewLoader(dir)
 
-	file := filepath.Join(dir, "hoge.txt")
-	fh, err := os.OpenFile(file, os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		t.Fatal(err)
+	for _, c := range cases {
+		t.Run(c.subtest, func(t *testing.T) {
+			input := filepath.Join(dir, "dropped-in")
+			testutil.CopyFile(input, "loader_test.go")
+			actual, err := loader.DropIn(input)
+
+			assert.Nil(t, err)
+			assert.Equal(t, c.expectedFilepath, actual)
+
+			_, err = os.Stat(actual)
+
+			assert.Nil(t, err)
+
+			_, err = os.Stat(c.expectedNotExist)
+
+			assert.True(t, os.IsNotExist(err))
+		})
 	}
-	_, err = fh.WriteString("hogefuga")
-	if err != nil {
-		t.Fatal(err)
-	}
-	fh.Close()
-
-	nextFile, err := loader.MoveFileToNextDir(file)
-
-	assert.Nil(t, err)
-	assert.Equal(t, filepath.Join(dir, "db01", "hoge.txt"), nextFile)
-
-	_, err = os.Stat(nextFile)
-
-	assert.Nil(t, err)
-}
-
-func TestLoader_CleanOldDirs(t *testing.T) {
-	dir, err := ioutil.TempDir(os.TempDir(), "store-test")
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = os.MkdirAll(dir, 0755)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.RemoveAll(dir)
-
-	buf := new(bytes.Buffer)
-	logger := log.New(buf, "", log.LstdFlags)
-	loader := NewLoader(dir, logger)
-	loader.BuildStoreDirs()
-
-	oldFile := filepath.Join(dir, "db01", "hoge.txt")
-	fh, err := os.OpenFile(oldFile, os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		t.Fatal(err)
-	}
-	_, err = fh.WriteString("hogehoge")
-	if err != nil {
-		t.Fatal(err)
-	}
-	fh.Close()
-
-	err = loader.CleanOldDirs()
-
-	assert.Nil(t, err)
-
-	_, err = os.Stat(oldFile)
-
-	assert.NotNil(t, err)
-	assert.True(t, os.IsNotExist(err))
 }
