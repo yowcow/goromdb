@@ -1,4 +1,4 @@
-package memcachedb
+package mdbstore
 
 import (
 	"bytes"

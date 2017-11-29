@@ -7,7 +7,7 @@ import (
 	"io/ioutil"
 
 	"github.com/ajiyoshi-vg/goberkeleydb/bdb"
-	"github.com/yowcow/goromdb/store/memcachedb"
+	"github.com/yowcow/goromdb/store/mdbstore"
 )
 
 // Data represents a key-value data
@@ -44,7 +44,7 @@ func writeDB(jsonFile, dbFile string) {
 
 	for k, v := range data {
 		data := new(bytes.Buffer)
-		err := memcachedb.Serialize(data, []byte(k), []byte(v))
+		err := mdbstore.Serialize(data, []byte(k), []byte(v))
 		if err != nil {
 			panic(err)
 		}
