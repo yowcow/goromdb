@@ -3,8 +3,6 @@ package watcher
 import (
 	"bytes"
 	"context"
-	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -12,35 +10,8 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/yowcow/goromdb/testutil"
 )
-
-func createTmpDir() string {
-	dir, err := ioutil.TempDir(os.TempDir(), "watcher")
-	if err != nil {
-		panic(err)
-	}
-	return dir
-}
-
-func copyFile(dst, src string) error {
-	fo, err := os.Create(dst)
-	if err != nil {
-		return err
-	}
-	defer fo.Close()
-
-	fi, err := os.Open(src)
-	if err != nil {
-		return err
-	}
-	defer fi.Close()
-
-	if _, err = io.Copy(fo, fi); err != nil {
-		return err
-	}
-
-	return nil
-}
 
 func TestVerifyFile(t *testing.T) {
 	type Case struct {
@@ -68,7 +39,7 @@ func TestVerifyFile(t *testing.T) {
 }
 
 func TestNew(t *testing.T) {
-	dir := createTmpDir()
+	dir := testutil.CreateTmpDir()
 	defer os.RemoveAll(dir)
 
 	logbuf := new(bytes.Buffer)
@@ -81,7 +52,7 @@ func TestNew(t *testing.T) {
 }
 
 func TestStart(t *testing.T) {
-	dir := createTmpDir()
+	dir := testutil.CreateTmpDir()
 	defer os.RemoveAll(dir)
 
 	logbuf := new(bytes.Buffer)
@@ -97,7 +68,7 @@ func TestStart(t *testing.T) {
 }
 
 func TestWatchOutput(t *testing.T) {
-	dir := createTmpDir()
+	dir := testutil.CreateTmpDir()
 	defer os.RemoveAll(dir)
 
 	logbuf := new(bytes.Buffer)
@@ -109,14 +80,8 @@ func TestWatchOutput(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	out := wcr.Start(ctx)
 
-	err := copyFile(filepath.Join(dir, "valid.txt"), "valid.txt")
-	if err != nil {
-		panic(err)
-	}
-	err = copyFile(filepath.Join(dir, "valid.txt.md5"), "valid.txt.md5")
-	if err != nil {
-		panic(err)
-	}
+	testutil.CopyFile(filepath.Join(dir, "valid.txt"), "valid.txt")
+	testutil.CopyFile(filepath.Join(dir, "valid.txt.md5"), "valid.txt.md5")
 
 	loadedFile := <-out
 	cancel()
@@ -124,7 +89,7 @@ func TestWatchOutput(t *testing.T) {
 
 	assert.Equal(t, file, loadedFile)
 
-	_, err = os.Stat(filepath.Join(dir, "valid.txt.md5"))
+	_, err := os.Stat(filepath.Join(dir, "valid.txt.md5"))
 
 	assert.False(t, os.IsExist(err))
 }

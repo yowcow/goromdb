@@ -12,7 +12,7 @@ import (
 )
 
 type Watcher struct {
-	file     string
+	File     string
 	md5file  string
 	interval int
 	logger   *log.Logger
@@ -32,17 +32,17 @@ func (w Watcher) watch(ctx context.Context, out chan<- string) {
 	d := time.Duration(w.interval) * time.Millisecond
 	tc := time.NewTicker(d)
 	defer func() {
-		w.logger.Printf("watcher finished watching for file: %s", w.file)
+		w.logger.Printf("watcher finished watching for file: %s", w.File)
 		close(out)
 		tc.Stop()
 	}()
-	w.logger.Printf("watcher started watching for file: %s", w.file)
+	w.logger.Printf("watcher started watching for file: %s", w.File)
 	for {
 		select {
 		case <-tc.C:
-			if ok, err := verifyFile(w.file, w.md5file); ok {
+			if ok, err := verifyFile(w.File, w.md5file); ok {
 				os.Remove(w.md5file)
-				out <- w.file
+				out <- w.File
 			} else if err != nil {
 				w.logger.Println("watcher file verification failed ", err.Error())
 			}
