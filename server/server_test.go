@@ -7,13 +7,14 @@ import (
 	"io"
 	"log"
 	"net"
-	"regexp"
+	"os"
+	"path/filepath"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/yowcow/goromdb/protocol"
 	"github.com/yowcow/goromdb/store"
+	"github.com/yowcow/goromdb/testutil"
 )
 
 type TestKeywords map[string][][]byte
@@ -62,6 +63,14 @@ func createTestStore(logger *log.Logger) store.Store {
 	return &TestStore{data, logger}
 }
 
+func (s TestStore) Start() <-chan bool {
+	return nil
+}
+
+func (s TestStore) Load(file string) error {
+	return nil
+}
+
 func (s TestStore) Get(key []byte) ([]byte, error) {
 	if v, ok := s.data[string(key)]; ok {
 		return []byte(v), nil
@@ -69,69 +78,81 @@ func (s TestStore) Get(key []byte) ([]byte, error) {
 	return nil, store.KeyNotFoundError(key)
 }
 
-func (s TestStore) Shutdown() error {
-	s.logger.Print("store shutting down")
-	return nil
-}
+func TestHandleConn(t *testing.T) {
+	dir := testutil.CreateTmpDir()
+	defer os.RemoveAll(dir)
 
-func TestServer(t *testing.T) {
+	sock := filepath.Join(dir, "test.sock")
+	logbuf := new(bytes.Buffer)
+	logger := log.New(logbuf, "", 0)
+	p := createTestProtocol()
+	s := createTestStore(logger)
+	svr := New("unix", sock, p, s, logger)
+
+	done := make(chan bool)
+	ln, err := net.Listen("unix", sock)
+	if err != nil {
+		panic(err)
+	}
+	go func(d chan<- bool) {
+		defer func() {
+			close(d)
+		}()
+		for {
+			conn, err := ln.Accept()
+			if err != nil {
+				break
+			}
+			svr.HandleConn(conn)
+		}
+	}(done)
+
 	type Case struct {
 		input    string
 		expected []string
+		subtest  string
 	}
-
 	cases := []Case{
 		{
-			input: "hoge\r\n",
-			expected: []string{
+			"hoge\r\n",
+			[]string{
 				"foo foo!",
 				"bar bar!!",
 				"BYE",
 			},
+			"hoge returns 3 lines of message",
 		},
 		{
-			input: "fuga\r\n",
-			expected: []string{
+			"fuga\r\n",
+			[]string{
 				"BYE",
 			},
+			"fuga returns 1 line of message",
 		},
 	}
 
-	buf := new(bytes.Buffer)
-	l := log.New(buf, "", log.Lshortfile)
-	p := createTestProtocol()
-	s := createTestStore(l)
-	server := New("tcp", ":11222", p, s, l)
-
-	go func() {
-		server.Start()
-	}()
-
-	time.Sleep(1 * time.Second) // should wait server to get started
-	conn, err := net.Dial("tcp", "localhost:11222")
-
-	assert.Nil(t, err)
-
-	var output []byte
-	r := bufio.NewReader(conn)
-	w := bufio.NewWriter(conn)
-
 	for _, c := range cases {
-		w.WriteString(c.input)
-		w.Flush()
+		t.Run(c.subtest, func(t *testing.T) {
+			conn, err := net.Dial("unix", sock)
+			if err != nil {
+				panic(err)
+			}
+			defer conn.Close()
 
-		for _, expected := range c.expected {
-			output, _, err = r.ReadLine()
+			r := bufio.NewReader(conn)
+			_, err = conn.Write([]byte(c.input))
 
-			assert.Equal(t, expected, string(output))
 			assert.Nil(t, err)
-		}
+
+			for _, row := range c.expected {
+				actual, _, err := r.ReadLine()
+
+				assert.Nil(t, err)
+				assert.Equal(t, row, string(actual))
+			}
+		})
 	}
 
-	assert.Nil(t, conn.Close())
-	assert.Nil(t, server.Shutdown())
-
-	re := regexp.MustCompile("server failed parsing a line: invalid command")
-
-	assert.True(t, re.Match(buf.Bytes()))
+	ln.Close()
+	<-done
 }
