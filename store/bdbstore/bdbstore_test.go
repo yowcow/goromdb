@@ -94,10 +94,22 @@ func TestGet(t *testing.T) {
 			"existing key returns expected val",
 		},
 		{
+			"hoge",
+			[]byte("hoge!"),
+			false,
+			"existing key again returns expected val",
+		},
+		{
 			"hogehoge",
 			nil,
 			true,
 			"non-existing key returns error",
+		},
+		{
+			"hogehoge",
+			nil,
+			true,
+			"non-existing key again returns error",
 		},
 	}
 

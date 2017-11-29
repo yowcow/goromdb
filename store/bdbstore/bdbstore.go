@@ -1,6 +1,7 @@
 package bdbstore
 
 import (
+	"fmt"
 	"log"
 	"sync"
 
@@ -38,6 +39,7 @@ func New(filein <-chan string, basedir string, logger *log.Logger) (store.Store,
 	}, nil
 }
 
+// Start starts a goroutine, and returns a done channel
 func (s *Store) Start() <-chan bool {
 	done := make(chan bool)
 	go s.start(done)
@@ -61,6 +63,7 @@ func (s *Store) start(done chan<- bool) {
 	}
 }
 
+// Load loads BDB file into store, and returns error
 func (s *Store) Load(file string) error {
 	db, err := openBDB(file)
 	if err != nil {
@@ -93,13 +96,16 @@ func (s *Store) Get(key []byte) ([]byte, error) {
 	s.mux.RLock()
 	defer s.mux.RUnlock()
 	k := string(key)
-	if v, ok := s.data[k]; ok {
+	v, ok := s.data[k]
+	if ok && v != nil {
 		return v, nil
+	} else if ok && v == nil {
+		return nil, store.KeyNotFoundError(key)
 	} else if s.db != nil {
 		v, err := s.db.Get(bdb.NoTxn, key, 0)
 		if err != nil {
 			s.data[k] = nil
-			return nil, err
+			return nil, fmt.Errorf("bdbstore got error retrieving key '%s': %s", k, err.Error())
 		}
 		s.data[k] = v
 		return v, nil
