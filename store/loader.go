@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"syscall"
 )
 
 // DirCount defines the number of subdirectories
@@ -56,6 +57,8 @@ func buildDirs(basedir string, count int) ([]string, error) {
 
 // DropIn drops given file into next subdirectory, and returns the filepath
 func (l *Loader) DropIn(file string) (string, error) {
+	defer syscall.Sync() // make sure write is in sync
+
 	nextindex := l.curindex + 1
 	if nextindex >= len(l.dirs) {
 		nextindex = 0
@@ -64,7 +67,7 @@ func (l *Loader) DropIn(file string) (string, error) {
 	nextdir := l.dirs[nextindex]
 	nextfile := filepath.Join(nextdir, base)
 	if err := os.Rename(file, nextfile); err != nil {
-		return "", err
+		return nextfile, err
 	}
 	curdir := l.dirs[l.curindex]
 	curfile := filepath.Join(curdir, base)
