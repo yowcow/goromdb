@@ -1,154 +1,87 @@
 package jsonstore
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"os"
-	"path/filepath"
 	"sync"
-	"time"
 
 	"github.com/yowcow/goromdb/store"
 )
 
-// Data represents a key-value data
 type Data map[string]string
 
-// Store represents a store
 type Store struct {
-	file   string
 	data   Data
+	filein <-chan string
+	mux    *sync.RWMutex
 	logger *log.Logger
-	loader *store.Loader
-	quit   chan bool
-	wg     *sync.WaitGroup
 }
 
-// New creates a new store
-func New(file string, logger *log.Logger) store.Store {
+func New(filein <-chan string, logger *log.Logger) (store.Store, error) {
 	var data Data
-	dataUpdate := make(chan Data)
-
-	quit := make(chan bool)
-	wg := &sync.WaitGroup{}
-
-	baseDir := filepath.Dir(file)
-	loader := store.NewLoader(baseDir, logger)
-
-	if err := loader.BuildStoreDirs(); err != nil {
-		logger.Print("store failed creating directories: ", err)
-	}
-
-	s := &Store{
-		file,
+	return &Store{
 		data,
+		filein,
+		new(sync.RWMutex),
 		logger,
-		loader,
-		quit,
-		wg,
-	}
-
-	boot := make(chan bool)
-
-	wg.Add(1)
-	go s.startDataNode(boot, dataUpdate)
-
-	<-boot
-	close(boot)
-
-	return s
+	}, nil
 }
 
-func (s *Store) startDataNode(boot chan<- bool, dataIn <-chan Data) {
-	defer s.wg.Done()
+func (s *Store) Start(ctx context.Context) <-chan bool {
+	done := make(chan bool)
+	go s.start(ctx, done)
+	return done
+}
 
-	d := 5 * time.Second
-	watcher := store.NewWatcher(s.file, d, store.CheckMD5Sum, s.logger)
-
-	if watcher.IsLoadable() {
-		if data, err := LoadData(s.loader, s.file); err != nil {
-			s.logger.Print("data node failed loading new data: ", err)
-		} else {
-			s.data = data
-		}
-	}
-
-	boot <- true
-	s.logger.Print("data node started")
-
-	update := make(chan bool)
-	quit := make(chan bool)
-	wg := &sync.WaitGroup{}
-
-	wg.Add(1)
-	go watcher.Start(update, quit, wg)
-
+func (s *Store) start(ctx context.Context, done chan<- bool) {
+	defer func() {
+		s.logger.Println("jsonstore finished")
+		close(done)
+	}()
+	s.logger.Println("jsonstore started")
 	for {
 		select {
-		case <-update:
-			s.logger.Print("data node found update")
-			if data, err := LoadData(s.loader, s.file); err != nil {
-				s.logger.Print("data node failed loading new data: ", err)
+		case file := <-s.filein:
+			if err := s.Load(file); err != nil {
+				s.logger.Printf("jsonstore failed loading data from '%s': %s", file, err.Error())
 			} else {
-				s.data = data
-				s.logger.Print("data node succeeded loading new data")
-				if err := s.loader.CleanOldDirs(); err != nil {
-					s.logger.Print("data node failed cleaning old directory: ", err)
-				}
-				s.logger.Print("data node updated")
+				s.logger.Printf("jsonstore succeeded loading data from '%s'", file)
 			}
-		case <-s.quit:
-			quit <- true
-			close(quit)
-			wg.Wait()
-			close(update)
-			s.logger.Print("data node finished")
+		case <-ctx.Done():
 			return
 		}
 	}
 }
 
-// Get retrieves the value for given key from a store
-func (s Store) Get(key []byte) ([]byte, error) {
-	if v, ok := s.data[string(key)]; ok {
-		return []byte(v), nil
+func (s *Store) Load(file string) error {
+	fi, err := os.Open(file)
+	if err != nil {
+		return err
 	}
-	return nil, store.KeyNotFoundError(key)
-}
+	defer fi.Close()
 
-// Shutdown terminates a store
-func (s Store) Shutdown() error {
-	s.quit <- true
-	close(s.quit)
-	s.wg.Wait()
+	var data Data
+	decoder := json.NewDecoder(fi)
+	err = decoder.Decode(&data)
+	if err != nil {
+		return err
+	}
+
+	s.mux.Lock()
+	defer s.mux.Unlock()
+
+	s.data = data
 	return nil
 }
 
-// LoadData moves file into next store dir, unmarshals JSON and returns Data
-func LoadData(loader *store.Loader, file string) (Data, error) {
-	nextFile, err := loader.MoveFileToNextDir(file)
-	if err != nil {
-		return nil, err
-	}
-	data, err := LoadJSON(nextFile)
-	if err != nil {
-		return nil, err
-	}
-	return data, nil
-}
+func (s Store) Get(key []byte) ([]byte, error) {
+	s.mux.RLock()
+	defer s.mux.RUnlock()
 
-// LoadJSON reads file and parse JSON into Data
-func LoadJSON(file string) (Data, error) {
-	var data Data
-	fi, err := os.Open(file)
-	if err != nil {
-		return data, err
+	if val, ok := s.data[string(key)]; ok {
+		return []byte(val), nil
 	}
-	defer fi.Close()
-	dec := json.NewDecoder(fi)
-	err = dec.Decode(&data)
-	if err != nil {
-		return data, err
-	}
-	return data, nil
+	return nil, store.KeyNotFoundError(key)
 }

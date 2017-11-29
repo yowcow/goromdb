@@ -2,130 +2,75 @@ package jsonstore
 
 import (
 	"bytes"
+	"context"
+	_ "fmt"
 	"log"
-	"os"
-	"path/filepath"
+	_ "os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/yowcow/goromdb/store"
-	"github.com/yowcow/goromdb/test"
 )
 
-var sampleDBFile = "../../data/store/sample-data.json"
-
-func TestLoadJSON_returns_error_on_non_existing_file(t *testing.T) {
-	_, err := LoadJSON("./hoge/fuga")
-
-	assert.NotNil(t, err)
-}
-
-func TestLoadJSON_returns_error_on_invalid_JSON(t *testing.T) {
-	_, err := LoadJSON("./jsonstore-invalid.json")
-
-	assert.NotNil(t, err)
-}
-
-func TestLoadData_returns_data(t *testing.T) {
-	dir, err := test.CreateStoreDir()
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.RemoveAll(dir)
-
-	buf := new(bytes.Buffer)
-	logger := log.New(buf, "", log.LstdFlags)
-	loader := store.NewLoader(dir, logger)
-	err = loader.BuildStoreDirs()
-	if err != nil {
-		t.Fatal(err)
-	}
-	file, err := test.CopyDBFile(dir, sampleDBFile)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	data, err := LoadData(loader, file)
-
-	assert.Nil(t, err)
-	assert.Equal(t, "hoge!", data["hoge"])
-}
-
 func TestNew(t *testing.T) {
-	dir, err := test.CreateStoreDir()
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.RemoveAll(dir)
-
-	file, err := test.CopyDBFile(dir, sampleDBFile)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	buf := new(bytes.Buffer)
-	logger := log.New(buf, "", log.Lshortfile)
-	store := New(file, logger)
-
-	assert.NotNil(t, store)
-	assert.Nil(t, store.Shutdown())
-}
-
-func TestNew_with_non_existing_file(t *testing.T) {
-	dir, err := test.CreateStoreDir()
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.RemoveAll(dir)
-
-	buf := new(bytes.Buffer)
-	logger := log.New(buf, "", log.Lshortfile)
-	store := New(filepath.Join(dir, "hogehoge.txt"), logger)
-
-	assert.NotNil(t, store)
-	assert.Nil(t, store.Shutdown())
-}
-
-func TestGet_on_existing_key(t *testing.T) {
-	dir, err := test.CreateStoreDir()
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.RemoveAll(dir)
-
-	file, err := test.CopyDBFile(dir, sampleDBFile)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	buf := new(bytes.Buffer)
-	logger := log.New(buf, "", log.Lshortfile)
-	store := New(file, logger)
-	value, err := store.Get([]byte("hoge"))
+	filein := make(chan string)
+	logbuf := new(bytes.Buffer)
+	logger := log.New(logbuf, "", 0)
+	_, err := New(filein, logger)
 
 	assert.Nil(t, err)
-	assert.Equal(t, "hoge!", string(value))
-	assert.Nil(t, store.Shutdown())
 }
 
-func TestGet_on_non_existing_key(t *testing.T) {
-	dir, err := test.CreateStoreDir()
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.RemoveAll(dir)
+func TestStart(t *testing.T) {
+	filein := make(chan string)
+	logbuf := new(bytes.Buffer)
+	logger := log.New(logbuf, "", 0)
+	s, _ := New(filein, logger)
 
-	file, err := test.CopyDBFile(dir, sampleDBFile)
-	if err != nil {
-		t.Fatal(err)
-	}
+	ctx, cancel := context.WithCancel(context.Background())
+	done := s.Start(ctx)
+	cancel()
+	<-done
+}
 
-	buf := new(bytes.Buffer)
-	logger := log.New(buf, "", log.Lshortfile)
-	store := New(file, logger)
-	value, err := store.Get([]byte("foobar"))
+func TestLoadInvalidData(t *testing.T) {
+	filein := make(chan string)
+	logbuf := new(bytes.Buffer)
+	logger := log.New(logbuf, "", 0)
+	s, _ := New(filein, logger)
 
-	assert.Nil(t, value)
+	err := s.Load("invalid.json")
+
 	assert.NotNil(t, err)
-	assert.Nil(t, store.Shutdown())
+}
+
+func TestLoadValidData(t *testing.T) {
+	filein := make(chan string)
+	logbuf := new(bytes.Buffer)
+	logger := log.New(logbuf, "", 0)
+	s, _ := New(filein, logger)
+	err := s.Load("valid.json")
+
+	assert.Nil(t, err)
+
+	type Case struct {
+		input, expected []byte
+		subtest         string
+	}
+	cases := []Case{
+		{[]byte("foo"), nil, "non-existing key"},
+		{[]byte("hoge"), []byte("hogehoge"), "existing key: hoge"},
+		{[]byte("fuga"), []byte("fugafuga"), "existing key: fuga"},
+	}
+
+	for _, c := range cases {
+		t.Run(c.subtest, func(t *testing.T) {
+			actual, err := s.Get(c.input)
+
+			if c.expected == nil {
+				assert.NotNil(t, err)
+			} else {
+				assert.Equal(t, string(actual), string(c.expected))
+			}
+		})
+	}
 }
