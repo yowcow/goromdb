@@ -76,7 +76,7 @@ func (s *Store) Load(file string) error {
 	if err != nil {
 		return err
 	}
-	s.logger.Printf("bdbstore successfully opened new db at '%s'", file)
+	s.logger.Printf("bdbstore successfully opened a new db at '%s'", file)
 
 	data := make(Data)
 	olddb := s.db
