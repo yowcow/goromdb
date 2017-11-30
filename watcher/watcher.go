@@ -66,12 +66,12 @@ func verifyFile(file, md5file string) (bool, error) {
 	defer md5fi.Close()
 
 	expectedMD5 := make([]byte, 32)
-	len, err := md5fi.Read(expectedMD5)
+	l, err := md5fi.Read(expectedMD5)
 	if err != nil {
 		return false, err
 	}
-	if len != 32 {
-		return false, fmt.Errorf("invalid md5 hex length: %d", len)
+	if l != 32 {
+		return false, fmt.Errorf("invalid md5 hex length: %d", l)
 	}
 
 	h := md5.New()
