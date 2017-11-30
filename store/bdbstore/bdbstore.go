@@ -25,7 +25,7 @@ type Store struct {
 // New creates a store
 func New(filein <-chan string, basedir string, logger *log.Logger) (store.Store, error) {
 	data := make(Data)
-	loader, err := store.NewLoader(basedir)
+	loader, err := store.NewLoader(basedir, "data.db")
 	if err != nil {
 		return nil, err
 	}
@@ -52,6 +52,11 @@ func (s *Store) start(done chan<- bool) {
 		close(done)
 	}()
 	s.logger.Println("bdbstore started")
+	if file, ok := s.loader.FindAny(); ok {
+		if err := s.Load(file); err != nil {
+			s.logger.Printf("bdbstore failed loading data from '%s': %s", file, err.Error())
+		}
+	}
 	for file := range s.filein {
 		s.logger.Printf("bdbstore got a new file to load at '%s'", file)
 		newfile, err := s.loader.DropIn(file)
@@ -59,7 +64,7 @@ func (s *Store) start(done chan<- bool) {
 			s.logger.Printf("bdbstore failed dropping file from '%s' into '%s': %s", file, newfile, err.Error())
 		} else if err = s.Load(newfile); err != nil {
 			s.logger.Printf("bdbstore failed loading data from '%s': %s", newfile, err.Error())
-		} else if ok := s.loader.CleanUp(file); ok {
+		} else if ok := s.loader.CleanUp(); ok {
 			s.logger.Print("bdbstore successfully removed previously loaded file")
 		}
 	}
@@ -71,7 +76,7 @@ func (s *Store) Load(file string) error {
 	if err != nil {
 		return err
 	}
-	s.logger.Printf("bdbstore successfully opened new db at '%s'", file)
+	s.logger.Printf("bdbstore successfully opened a new db at '%s'", file)
 
 	data := make(Data)
 	olddb := s.db

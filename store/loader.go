@@ -16,19 +16,21 @@ const DirPerm = 0755
 // Loader represents a loader
 type Loader struct {
 	basedir   string
+	filename  string
 	dirs      []string
 	curindex  int
 	previndex int
 }
 
 // NewLoader creates a new loader
-func NewLoader(basedir string) (*Loader, error) {
+func NewLoader(basedir, filename string) (*Loader, error) {
 	dirs, err := buildDirs(basedir, DirCount)
 	if err != nil {
 		return nil, err
 	}
 	return &Loader{
 		basedir,
+		filename,
 		dirs,
 		-1,
 		-1,
@@ -57,6 +59,17 @@ func buildDirs(basedir string, count int) ([]string, error) {
 	return dirs, nil
 }
 
+// FindAny tries finding a file to load in any existing subdirectiries, and returns its filepath
+func (l Loader) FindAny() (string, bool) {
+	for i := 0; i < DirCount; i++ {
+		file := filepath.Join(l.dirs[i], l.filename)
+		if _, err := os.Stat(file); err == nil {
+			return file, true
+		}
+	}
+	return "", false
+}
+
 // DropIn drops given file into next subdirectory, and returns the filepath
 func (l *Loader) DropIn(file string) (string, error) {
 	defer syscall.Sync() // make sure write is in sync
@@ -65,9 +78,8 @@ func (l *Loader) DropIn(file string) (string, error) {
 	if nextindex >= len(l.dirs) {
 		nextindex = 0
 	}
-	base := filepath.Base(file)
 	nextdir := l.dirs[nextindex]
-	nextfile := filepath.Join(nextdir, base)
+	nextfile := filepath.Join(nextdir, l.filename)
 	if err := os.Rename(file, nextfile); err != nil {
 		return nextfile, err
 	}
@@ -77,13 +89,12 @@ func (l *Loader) DropIn(file string) (string, error) {
 }
 
 // CleanUp cleans previously loaded data file, and returns bool
-func (l Loader) CleanUp(file string) bool {
+func (l Loader) CleanUp() bool {
 	if l.previndex < 0 {
 		return false
 	}
-	base := filepath.Base(file)
 	prevdir := l.dirs[l.previndex]
-	prevfile := filepath.Join(prevdir, base)
+	prevfile := filepath.Join(prevdir, l.filename)
 	if err := os.Remove(prevfile); err != nil {
 		return false
 	}
