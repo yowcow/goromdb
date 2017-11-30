@@ -25,6 +25,7 @@ func main() {
 	var protoBackend string
 	var storeBackend string
 	var file string
+	var gzipped bool
 	var basedir string
 	var help bool
 	var version bool
@@ -33,6 +34,7 @@ func main() {
 	flag.StringVar(&protoBackend, "proto", "memcached", "protocol: memcached")
 	flag.StringVar(&storeBackend, "store", "jsonstore", "store: jsonstore, bdbstore, memcachedb-bdbstore, radixstore")
 	flag.StringVar(&file, "file", "/tmp/goromdb", "data file to be loaded into store")
+	flag.BoolVar(&gzipped, "gzipped", false, "whether or not loading file is gzipped")
 	flag.StringVar(&basedir, "basedir", "", "base directory to store loaded data file")
 	flag.BoolVar(&help, "help", false, "print help")
 	flag.BoolVar(&version, "version", false, "print version")
@@ -59,7 +61,7 @@ func main() {
 	wcr := watcher.New(file, 5000, logger)
 	filein := wcr.Start(ctx)
 
-	st, err := createStore(storeBackend, filein, basedir, logger)
+	st, err := createStore(storeBackend, filein, gzipped, basedir, logger)
 	if err != nil {
 		panic(err)
 	}
@@ -90,7 +92,7 @@ func createProtocol(protoBackend string) (protocol.Protocol, error) {
 	}
 }
 
-func createStore(storeBackend string, filein <-chan string, basedir string, logger *log.Logger) (store.Store, error) {
+func createStore(storeBackend string, filein <-chan string, gzipped bool, basedir string, logger *log.Logger) (store.Store, error) {
 	switch storeBackend {
 	case "jsonstore":
 		return jsonstore.New(filein, logger)
@@ -103,7 +105,7 @@ func createStore(storeBackend string, filein <-chan string, basedir string, logg
 		}
 		return mdbstore.New(bs, logger)
 	case "radixstore":
-		return radixstore.New(filein, basedir, logger)
+		return radixstore.New(filein, gzipped, basedir, logger)
 	default:
 		return nil, fmt.Errorf("don't know how to handle store '%s'", storeBackend)
 	}
