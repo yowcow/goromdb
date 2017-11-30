@@ -12,7 +12,7 @@ func TestNew(t *testing.T) {
 	filein := make(chan string)
 	logbuf := new(bytes.Buffer)
 	logger := log.New(logbuf, "", 0)
-	_, err := New(filein, logger)
+	_, err := New(filein, false, logger)
 
 	assert.Nil(t, err)
 }
@@ -21,7 +21,7 @@ func TestLoad(t *testing.T) {
 	filein := make(chan string)
 	logbuf := new(bytes.Buffer)
 	logger := log.New(logbuf, "", 0)
-	s, _ := New(filein, logger)
+	s, _ := New(filein, false, logger)
 
 	type Case struct {
 		input       string
@@ -46,7 +46,7 @@ func TestGet(t *testing.T) {
 	filein := make(chan string)
 	logbuf := new(bytes.Buffer)
 	logger := log.New(logbuf, "", 0)
-	s, _ := New(filein, logger)
+	s, _ := New(filein, false, logger)
 	_ = s.Load("valid.json")
 
 	type Case struct {
@@ -76,7 +76,7 @@ func TestStart(t *testing.T) {
 	filein := make(chan string)
 	logbuf := new(bytes.Buffer)
 	logger := log.New(logbuf, "", 0)
-	s, _ := New(filein, logger)
+	s, _ := New(filein, false, logger)
 	done := s.Start()
 
 	for i := 0; i < 10; i++ {

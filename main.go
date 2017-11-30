@@ -95,7 +95,7 @@ func createProtocol(protoBackend string) (protocol.Protocol, error) {
 func createStore(storeBackend string, filein <-chan string, gzipped bool, basedir string, logger *log.Logger) (store.Store, error) {
 	switch storeBackend {
 	case "jsonstore":
-		return jsonstore.New(filein, logger)
+		return jsonstore.New(filein, gzipped, logger)
 	case "bdbstore":
 		return bdbstore.New(filein, basedir, logger)
 	case "memcachedb-bdbstore":

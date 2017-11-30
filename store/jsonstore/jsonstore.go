@@ -12,17 +12,19 @@ import (
 type Data map[string]string
 
 type Store struct {
-	data   Data
-	filein <-chan string
-	mux    *sync.RWMutex
-	logger *log.Logger
+	data    Data
+	filein  <-chan string
+	gzipped bool
+	mux     *sync.RWMutex
+	logger  *log.Logger
 }
 
-func New(filein <-chan string, logger *log.Logger) (store.Store, error) {
+func New(filein <-chan string, gzipped bool, logger *log.Logger) (store.Store, error) {
 	var data Data
 	return &Store{
 		data,
 		filein,
+		gzipped,
 		new(sync.RWMutex),
 		logger,
 	}, nil
@@ -50,14 +52,19 @@ func (s *Store) start(done chan<- bool) {
 }
 
 func (s *Store) Load(file string) error {
-	fi, err := os.Open(file)
+	f, err := os.Open(file)
 	if err != nil {
 		return err
 	}
-	defer fi.Close()
+	defer f.Close()
+
+	r, err := store.NewReader(f, s.gzipped)
+	if err != nil {
+		return err
+	}
 
 	var data Data
-	decoder := json.NewDecoder(fi)
+	decoder := json.NewDecoder(r)
 	err = decoder.Decode(&data)
 	if err != nil {
 		return err

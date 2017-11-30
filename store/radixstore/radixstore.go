@@ -1,7 +1,6 @@
 package radixstore
 
 import (
-	"compress/gzip"
 	"encoding/csv"
 	"fmt"
 	"io"
@@ -75,11 +74,12 @@ func (s *Store) Load(file string) error {
 	defer f.Close()
 	s.logger.Printf("radixstore successfully opened a new file at '%s'", file)
 
-	tree := radix.New()
-	r, err := createReader(f, s.gzipped)
+	r, err := store.NewReader(f, s.gzipped)
 	if err != nil {
 		return err
 	}
+
+	tree := radix.New()
 	csvr := csv.NewReader(r)
 	if err = buildTree(tree, csvr); err != nil {
 		return err
@@ -90,13 +90,6 @@ func (s *Store) Load(file string) error {
 	s.mux.Unlock()
 	s.logger.Println("radixstore successfully replaced a tree")
 	return nil
-}
-
-func createReader(f io.Reader, gzipped bool) (io.Reader, error) {
-	if gzipped {
-		return gzip.NewReader(f)
-	}
-	return f, nil
 }
 
 func buildTree(tree *radix.Tree, r *csv.Reader) error {
