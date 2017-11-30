@@ -85,11 +85,12 @@ func (s *Store) Load(file string) error {
 	s.data = data
 	s.db = db
 	s.mux.Unlock()
+	s.logger.Println("bdbstore successfull replaced an open db")
 
 	if olddb != nil {
 		olddb.Close(0)
 		olddb = nil
-		s.logger.Printf("bdbstore successfully closed old db")
+		s.logger.Println("bdbstore successfully closed an old db")
 	}
 	return nil
 }
