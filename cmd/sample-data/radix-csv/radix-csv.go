@@ -40,14 +40,11 @@ func writeCSV(jsonFile, csvFile string) {
 	defer fo.Close()
 
 	w := csv.NewWriter(fo)
-	idx := 0
 	for k, v := range data {
 		rowdata := Data{
 			"key":   k,
 			"value": v,
-			"index": idx,
 		}
-		idx++
 		rowjson, err := json.Marshal(rowdata)
 		if err != nil {
 			panic(err)
