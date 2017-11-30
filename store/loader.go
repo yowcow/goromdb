@@ -15,9 +15,10 @@ const DirPerm = 0755
 
 // Loader represents a loader
 type Loader struct {
-	basedir  string
-	dirs     []string
-	curindex int
+	basedir   string
+	dirs      []string
+	curindex  int
+	previndex int
 }
 
 // NewLoader creates a new loader
@@ -29,7 +30,8 @@ func NewLoader(basedir string) (*Loader, error) {
 	return &Loader{
 		basedir,
 		dirs,
-		0,
+		-1,
+		-1,
 	}, nil
 }
 
@@ -69,11 +71,21 @@ func (l *Loader) DropIn(file string) (string, error) {
 	if err := os.Rename(file, nextfile); err != nil {
 		return nextfile, err
 	}
-	curdir := l.dirs[l.curindex]
-	curfile := filepath.Join(curdir, base)
-	if _, err := os.Stat(curfile); err == nil {
-		os.Remove(curfile)
-	}
+	l.previndex = l.curindex
 	l.curindex = nextindex
 	return nextfile, nil
+}
+
+// CleanUp cleans previously loaded data file, and returns bool
+func (l Loader) CleanUp(file string) bool {
+	if l.previndex < 0 {
+		return false
+	}
+	base := filepath.Base(file)
+	prevdir := l.dirs[l.previndex]
+	prevfile := filepath.Join(prevdir, base)
+	if err := os.Remove(prevfile); err != nil {
+		return false
+	}
+	return true
 }
