@@ -11,7 +11,9 @@ import (
 	"github.com/yowcow/goromdb/protocol/memcachedprotocol"
 	"github.com/yowcow/goromdb/server"
 	"github.com/yowcow/goromdb/store"
+	"github.com/yowcow/goromdb/store/bdbstore"
 	"github.com/yowcow/goromdb/store/jsonstore"
+	"github.com/yowcow/goromdb/store/mdbstore"
 	"github.com/yowcow/goromdb/watcher"
 )
 
@@ -22,18 +24,27 @@ func main() {
 	var protoBackend string
 	var storeBackend string
 	var file string
+	var basedir string
+	var help bool
 	var version bool
 
 	flag.StringVar(&addr, "addr", ":11211", "address to bind to")
 	flag.StringVar(&protoBackend, "proto", "memcached", "protocol: memcached")
-	flag.StringVar(&storeBackend, "store", "jsonstore", "store: jsonstore")
-	flag.StringVar(&file, "file", "/tmp/goromdb", "data file to load into store")
+	flag.StringVar(&storeBackend, "store", "jsonstore", "store: jsonstore, bdbstore, memcachedb-bdbstore")
+	flag.StringVar(&file, "file", "/tmp/goromdb", "data file to be loaded into store")
+	flag.StringVar(&basedir, "basedir", "", "base directory to store loaded data file")
+	flag.BoolVar(&help, "help", false, "print help")
 	flag.BoolVar(&version, "version", false, "print version")
 	flag.Parse()
 
+	if help {
+		flag.Usage()
+		os.Exit(0)
+	}
+
 	if version {
 		fmt.Println("goromdb", Version)
-		return
+		os.Exit(0)
 	}
 
 	logger := log.New(os.Stdout, "", log.LstdFlags|log.Lshortfile)
@@ -47,7 +58,7 @@ func main() {
 	wcr := watcher.New(file, 5000, logger)
 	filein := wcr.Start(ctx)
 
-	st, err := createStore(storeBackend, filein, logger)
+	st, err := createStore(storeBackend, filein, basedir, logger)
 	if err != nil {
 		panic(err)
 	}
@@ -78,10 +89,18 @@ func createProtocol(protoBackend string) (protocol.Protocol, error) {
 	}
 }
 
-func createStore(storeBackend string, filein <-chan string, logger *log.Logger) (store.Store, error) {
+func createStore(storeBackend string, filein <-chan string, basedir string, logger *log.Logger) (store.Store, error) {
 	switch storeBackend {
 	case "jsonstore":
 		return jsonstore.New(filein, logger)
+	case "bdbstore":
+		return bdbstore.New(filein, basedir, logger)
+	case "memcachedb-bdbstore":
+		bs, err := bdbstore.New(filein, basedir, logger)
+		if err != nil {
+			return nil, err
+		}
+		return mdbstore.New(bs, logger)
 	default:
 		return nil, fmt.Errorf("don't know how to handle store '%s'", storeBackend)
 	}
