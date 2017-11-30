@@ -6,7 +6,7 @@ else
 MD5 = md5sum
 endif
 
-DB_FILES = sample-data.json sample-bdb.db sample-memcachedb-bdb.db sample-radix.csv
+DB_FILES = sample-data.json sample-bdb.db sample-memcachedb-bdb.db sample-radix.csv sample-radix.csv.gz
 DB_DIR = data/store
 DB_PATHS = $(addprefix $(DB_DIR)/,$(DB_FILES))
 MD5_PATHS = $(foreach path,$(DB_PATHS),$(path).md5)
@@ -36,6 +36,9 @@ $(DB_DIR)/sample-memcachedb-bdb.db: data/sample-data.json
 
 $(DB_DIR)/sample-radix.csv: data/sample-data.json
 	go run ./cmd/sample-data/radix-csv/radix-csv.go -input-from $< -output-to $@
+
+$(DB_DIR)/sample-radix.csv.gz: $(DB_DIR)/sample-radix.csv
+	gzip -c $< > $@
 
 bench:
 	go test -bench .
