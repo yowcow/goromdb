@@ -14,6 +14,7 @@ import (
 	"github.com/yowcow/goromdb/store/bdbstore"
 	"github.com/yowcow/goromdb/store/jsonstore"
 	"github.com/yowcow/goromdb/store/mdbstore"
+	"github.com/yowcow/goromdb/store/radixstore"
 	"github.com/yowcow/goromdb/watcher"
 )
 
@@ -30,7 +31,7 @@ func main() {
 
 	flag.StringVar(&addr, "addr", ":11211", "address to bind to")
 	flag.StringVar(&protoBackend, "proto", "memcached", "protocol: memcached")
-	flag.StringVar(&storeBackend, "store", "jsonstore", "store: jsonstore, bdbstore, memcachedb-bdbstore")
+	flag.StringVar(&storeBackend, "store", "jsonstore", "store: jsonstore, bdbstore, memcachedb-bdbstore, radixstore")
 	flag.StringVar(&file, "file", "/tmp/goromdb", "data file to be loaded into store")
 	flag.StringVar(&basedir, "basedir", "", "base directory to store loaded data file")
 	flag.BoolVar(&help, "help", false, "print help")
@@ -101,6 +102,8 @@ func createStore(storeBackend string, filein <-chan string, basedir string, logg
 			return nil, err
 		}
 		return mdbstore.New(bs, logger)
+	case "radixstore":
+		return radixstore.New(filein, basedir, logger)
 	default:
 		return nil, fmt.Errorf("don't know how to handle store '%s'", storeBackend)
 	}
