@@ -67,10 +67,38 @@ func TestNewLoader(t *testing.T) {
 	dir := testutil.CreateTmpDir()
 	defer os.RemoveAll(dir)
 
-	loader, err := NewLoader(dir)
+	loader, err := NewLoader(dir, "test.data")
 
 	assert.Nil(t, err)
 	assert.NotNil(t, loader)
+}
+
+func TestFindAny(t *testing.T) {
+	dir := testutil.CreateTmpDir()
+	defer os.RemoveAll(dir)
+
+	loader, _ := NewLoader(dir, "test.data")
+	file00 := filepath.Join(dir, "data00", "test.data")
+	file01 := filepath.Join(dir, "data01", "test.data")
+
+	{
+		_, ok := loader.FindAny()
+		assert.False(t, ok)
+	}
+
+	{
+		testutil.CopyFile(file01, "loader_test.go")
+		file, ok := loader.FindAny()
+		assert.True(t, ok)
+		assert.Equal(t, file01, file)
+	}
+
+	{
+		testutil.CopyFile(file00, "loader_test.go")
+		file, ok := loader.FindAny()
+		assert.True(t, ok)
+		assert.Equal(t, file00, file)
+	}
 }
 
 func TestDropIn(t *testing.T) {
@@ -85,32 +113,32 @@ func TestDropIn(t *testing.T) {
 	}
 	cases := []Case{
 		{
-			filepath.Join(dir, "data00", "dropped-in"),
+			filepath.Join(dir, "data00", "test.data"),
 			0,
 			-1,
 			"1st drop-in stores into data00",
 		},
 		{
-			filepath.Join(dir, "data01", "dropped-in"),
+			filepath.Join(dir, "data01", "test.data"),
 			1,
 			0,
 			"2nd drop-in stores into data01",
 		},
 		{
-			filepath.Join(dir, "data00", "dropped-in"),
+			filepath.Join(dir, "data00", "test.data"),
 			0,
 			1,
 			"3rd drop-in stores into data00",
 		},
 		{
-			filepath.Join(dir, "data01", "dropped-in"),
+			filepath.Join(dir, "data01", "test.data"),
 			1,
 			0,
 			"4th drop-in stores into data01",
 		},
 	}
 
-	loader, _ := NewLoader(dir)
+	loader, _ := NewLoader(dir, "test.data")
 	for _, c := range cases {
 		t.Run(c.subtest, func(t *testing.T) {
 			input := filepath.Join(dir, "dropped-in")
@@ -148,22 +176,22 @@ func TestCleanUp(t *testing.T) {
 		},
 		{
 			true,
-			filepath.Join(dir, "data00", "dropped-in"),
+			filepath.Join(dir, "data00", "test.data"),
 			"file in data00 removed after 2nd drop-in",
 		},
 		{
 			true,
-			filepath.Join(dir, "data01", "dropped-in"),
+			filepath.Join(dir, "data01", "test.data"),
 			"file in data01 removed after 3rd drop-in",
 		},
 		{
 			true,
-			filepath.Join(dir, "data00", "dropped-in"),
+			filepath.Join(dir, "data00", "test.data"),
 			"file in data00 removed after 4th drop-in",
 		},
 	}
 
-	loader, _ := NewLoader(dir)
+	loader, _ := NewLoader(dir, "test.data")
 	for _, c := range cases {
 		t.Run(c.subtest, func(t *testing.T) {
 			input := filepath.Join(dir, "dropped-in")
@@ -177,7 +205,7 @@ func TestCleanUp(t *testing.T) {
 			_, err := loader.DropIn(input)
 			assert.Nil(t, err)
 
-			actual := loader.CleanUp(input)
+			actual := loader.CleanUp()
 			assert.Equal(t, c.expectedResult, actual)
 
 			if c.expectedRemovalFilepath != "" {
