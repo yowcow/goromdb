@@ -53,12 +53,14 @@ func (s *Store) start(done chan<- bool) {
 	}()
 	s.logger.Println("bdbstore started")
 	for file := range s.filein {
-		s.logger.Printf("bdbstore got new file to load at '%s'", file)
+		s.logger.Printf("bdbstore got a new file to load at '%s'", file)
 		newfile, err := s.loader.DropIn(file)
 		if err != nil {
 			s.logger.Printf("bdbstore failed dropping file from '%s' into '%s': %s", file, newfile, err.Error())
 		} else if err = s.Load(newfile); err != nil {
 			s.logger.Printf("bdbstore failed loading data from '%s': %s", newfile, err.Error())
+		} else if ok := s.loader.CleanUp(file); ok {
+			s.logger.Print("bdbstore successfully removed previously loaded file")
 		}
 	}
 }
