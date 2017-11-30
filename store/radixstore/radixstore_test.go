@@ -16,6 +16,7 @@ import (
 )
 
 var sampleDataFile = "../../data/store/sample-radix.csv"
+var sampleDataFileGzipped = "../../data/store/sample-radix.csv.gz"
 
 func TestNew(t *testing.T) {
 	dir := testutil.CreateTmpDir()
@@ -24,7 +25,7 @@ func TestNew(t *testing.T) {
 	filein := make(chan string)
 	logbuf := new(bytes.Buffer)
 	logger := log.New(logbuf, "", 0)
-	_, err := New(filein, dir, logger)
+	_, err := New(filein, false, dir, logger)
 
 	assert.Nil(t, err)
 }
@@ -59,27 +60,29 @@ func TestBuildTree(t *testing.T) {
 }
 
 func TestLoad(t *testing.T) {
-	dir := testutil.CreateTmpDir()
-	defer os.RemoveAll(dir)
-
-	filein := make(chan string)
-	logbuf := new(bytes.Buffer)
-	logger := log.New(logbuf, "", 0)
-	s, _ := New(filein, dir, logger)
-
 	type Case struct {
 		input       string
+		gzipped     bool
 		expectError bool
 		subtest     string
 	}
 	cases := []Case{
-		{dir, true, "loading a dir fails"},
-		{sampleDataFile + ".hoge", true, "loading non-exising file fails"},
-		{sampleDataFile, false, "loading existing file succeeds"},
+		{"/tmp", false, true, "loading a dir fails"},
+		{sampleDataFile + ".hoge", false, true, "loading non-exising file fails"},
+		{sampleDataFile, false, false, "loading existing file succeeds"},
+		{sampleDataFileGzipped, true, false, "loading gzipped file succeeds"},
 	}
 
 	for _, c := range cases {
 		t.Run(c.subtest, func(t *testing.T) {
+			dir := testutil.CreateTmpDir()
+			defer os.RemoveAll(dir)
+
+			filein := make(chan string)
+			logbuf := new(bytes.Buffer)
+			logger := log.New(logbuf, "", 0)
+			s, _ := New(filein, c.gzipped, dir, logger)
+
 			err := s.Load(c.input)
 			assert.Equal(t, c.expectError, err != nil)
 		})
@@ -93,7 +96,7 @@ func TestGet(t *testing.T) {
 	filein := make(chan string)
 	logbuf := new(bytes.Buffer)
 	logger := log.New(logbuf, "", 0)
-	s, _ := New(filein, dir, logger)
+	s, _ := New(filein, false, dir, logger)
 	_ = s.Load(sampleDataFile)
 
 	type Data map[string]interface{}
@@ -152,7 +155,7 @@ func TestStart(t *testing.T) {
 	filein := make(chan string)
 	logbuf := new(bytes.Buffer)
 	logger := log.New(logbuf, "", 0)
-	s, _ := New(filein, dir, logger)
+	s, _ := New(filein, false, dir, logger)
 	done := s.Start()
 
 	file := filepath.Join(dir, "drop-in")

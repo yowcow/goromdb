@@ -1,6 +1,7 @@
 package radixstore
 
 import (
+	"compress/gzip"
 	"encoding/csv"
 	"fmt"
 	"io"
@@ -13,14 +14,15 @@ import (
 )
 
 type Store struct {
-	tree   *radix.Tree
-	filein <-chan string
-	loader *store.Loader
-	mux    *sync.RWMutex
-	logger *log.Logger
+	tree    *radix.Tree
+	filein  <-chan string
+	gzipped bool
+	loader  *store.Loader
+	mux     *sync.RWMutex
+	logger  *log.Logger
 }
 
-func New(filein <-chan string, basedir string, logger *log.Logger) (store.Store, error) {
+func New(filein <-chan string, gzipped bool, basedir string, logger *log.Logger) (store.Store, error) {
 	loader, err := store.NewLoader(basedir, "data.csv")
 	if err != nil {
 		return nil, err
@@ -28,6 +30,7 @@ func New(filein <-chan string, basedir string, logger *log.Logger) (store.Store,
 	return &Store{
 		radix.New(),
 		filein,
+		gzipped,
 		loader,
 		new(sync.RWMutex),
 		logger,
@@ -73,15 +76,27 @@ func (s *Store) Load(file string) error {
 	s.logger.Printf("radixstore successfully opened a new file at '%s'", file)
 
 	tree := radix.New()
-	r := csv.NewReader(f)
-	if err = buildTree(tree, r); err != nil {
+	r, err := createReader(f, s.gzipped)
+	if err != nil {
 		return err
 	}
+	csvr := csv.NewReader(r)
+	if err = buildTree(tree, csvr); err != nil {
+		return err
+	}
+
 	s.mux.Lock()
 	s.tree = tree
 	s.mux.Unlock()
 	s.logger.Println("radixstore successfully replaced a tree")
 	return nil
+}
+
+func createReader(f io.Reader, gzipped bool) (io.Reader, error) {
+	if gzipped {
+		return gzip.NewReader(f)
+	}
+	return f, nil
 }
 
 func buildTree(tree *radix.Tree, r *csv.Reader) error {
