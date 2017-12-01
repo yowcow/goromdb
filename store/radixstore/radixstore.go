@@ -111,7 +111,7 @@ func buildTree(tree *radix.Tree, r reader.Reader) error {
 		} else if err != nil {
 			return err
 		}
-		tree.Insert(string(k), string(v))
+		tree.Insert(string(k), v)
 	}
 }
 
@@ -122,5 +122,5 @@ func (s Store) Get(k []byte) ([]byte, error) {
 	if !ok {
 		return nil, store.KeyNotFoundError(k)
 	}
-	return []byte(v.(string)), nil
+	return v.([]byte), nil
 }
