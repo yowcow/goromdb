@@ -9,6 +9,7 @@ import (
 
 	"github.com/yowcow/goromdb/protocol"
 	"github.com/yowcow/goromdb/protocol/memcachedprotocol"
+	"github.com/yowcow/goromdb/reader/csvreader"
 	"github.com/yowcow/goromdb/server"
 	"github.com/yowcow/goromdb/store"
 	"github.com/yowcow/goromdb/store/bdbstore"
@@ -105,7 +106,7 @@ func createStore(storeBackend string, filein <-chan string, gzipped bool, basedi
 		}
 		return mdbstore.New(bs, logger)
 	case "radixstore":
-		return radixstore.New(filein, gzipped, basedir, logger)
+		return radixstore.New(filein, gzipped, basedir, csvreader.New, logger)
 	default:
 		return nil, fmt.Errorf("don't know how to handle store '%s'", storeBackend)
 	}

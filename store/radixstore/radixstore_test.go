@@ -2,7 +2,6 @@ package radixstore
 
 import (
 	"bytes"
-	"encoding/csv"
 	"log"
 	"os"
 	"path/filepath"
@@ -11,6 +10,7 @@ import (
 
 	"github.com/armon/go-radix"
 	"github.com/stretchr/testify/assert"
+	"github.com/yowcow/goromdb/reader/csvreader"
 	"github.com/yowcow/goromdb/testutil"
 )
 
@@ -24,7 +24,12 @@ func TestNew(t *testing.T) {
 	filein := make(chan string)
 	logbuf := new(bytes.Buffer)
 	logger := log.New(logbuf, "", 0)
-	_, err := New(filein, false, dir, logger)
+
+	_, err := New(filein, false, dir, nil, logger)
+
+	assert.NotNil(t, err)
+
+	_, err = New(filein, false, dir, csvreader.New, logger)
 
 	assert.Nil(t, err)
 }
@@ -51,7 +56,7 @@ func TestBuildTree(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.subtest, func(t *testing.T) {
 			tree := radix.New()
-			r := csv.NewReader(strings.NewReader(c.input))
+			r := csvreader.New(strings.NewReader(c.input))
 			err := buildTree(tree, r)
 			assert.Equal(t, c.expectError, err != nil)
 		})
@@ -80,7 +85,7 @@ func TestLoad(t *testing.T) {
 			filein := make(chan string)
 			logbuf := new(bytes.Buffer)
 			logger := log.New(logbuf, "", 0)
-			s, _ := New(filein, c.gzipped, dir, logger)
+			s, _ := New(filein, c.gzipped, dir, csvreader.New, logger)
 
 			err := s.Load(c.input)
 			assert.Equal(t, c.expectError, err != nil)
@@ -95,7 +100,7 @@ func TestGet(t *testing.T) {
 	filein := make(chan string)
 	logbuf := new(bytes.Buffer)
 	logger := log.New(logbuf, "", 0)
-	s, _ := New(filein, false, dir, logger)
+	s, _ := New(filein, false, dir, csvreader.New, logger)
 	_ = s.Load(sampleDataFile)
 
 	type Case struct {
@@ -141,7 +146,7 @@ func TestStart(t *testing.T) {
 	filein := make(chan string)
 	logbuf := new(bytes.Buffer)
 	logger := log.New(logbuf, "", 0)
-	s, _ := New(filein, false, dir, logger)
+	s, _ := New(filein, false, dir, csvreader.New, logger)
 	done := s.Start()
 
 	file := filepath.Join(dir, "drop-in")

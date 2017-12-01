@@ -1,7 +1,6 @@
 package radixstore
 
 import (
-	"encoding/csv"
 	"fmt"
 	"io"
 	"log"
@@ -9,28 +8,40 @@ import (
 	"sync"
 
 	"github.com/armon/go-radix"
+	"github.com/yowcow/goromdb/reader"
 	"github.com/yowcow/goromdb/store"
 )
 
 type Store struct {
-	tree    *radix.Tree
-	filein  <-chan string
-	gzipped bool
-	loader  *store.Loader
-	mux     *sync.RWMutex
-	logger  *log.Logger
+	tree             *radix.Tree
+	filein           <-chan string
+	gzipped          bool
+	loader           *store.Loader
+	createReaderFunc reader.NewReaderFunc
+	mux              *sync.RWMutex
+	logger           *log.Logger
 }
 
-func New(filein <-chan string, gzipped bool, basedir string, logger *log.Logger) (store.Store, error) {
+func New(
+	filein <-chan string,
+	gzipped bool,
+	basedir string,
+	createReaderFunc reader.NewReaderFunc,
+	logger *log.Logger,
+) (store.Store, error) {
 	loader, err := store.NewLoader(basedir, "data.csv")
 	if err != nil {
 		return nil, err
+	}
+	if createReaderFunc == nil {
+		return nil, fmt.Errorf("createReaderFunc cannot be a nil")
 	}
 	return &Store{
 		radix.New(),
 		filein,
 		gzipped,
 		loader,
+		createReaderFunc,
 		new(sync.RWMutex),
 		logger,
 	}, nil
@@ -74,14 +85,14 @@ func (s *Store) Load(file string) error {
 	defer f.Close()
 	s.logger.Printf("radixstore successfully opened a new file at '%s'", file)
 
-	r, err := store.NewReader(f, s.gzipped)
+	ior, err := store.NewReader(f, s.gzipped)
 	if err != nil {
 		return err
 	}
 
 	tree := radix.New()
-	csvr := csv.NewReader(r)
-	if err = buildTree(tree, csvr); err != nil {
+	r := s.createReaderFunc(ior)
+	if err = buildTree(tree, r); err != nil {
 		return err
 	}
 
@@ -92,26 +103,24 @@ func (s *Store) Load(file string) error {
 	return nil
 }
 
-func buildTree(tree *radix.Tree, r *csv.Reader) error {
+func buildTree(tree *radix.Tree, r reader.Reader) error {
 	for {
-		record, err := r.Read()
+		k, v, err := r.Read()
 		if err == io.EOF {
 			return nil
 		} else if err != nil {
 			return err
-		} else if len(record) != 2 {
-			return fmt.Errorf("radixstore cannot load a row with a number of elements not exactly 2: %d", len(record))
 		}
-		tree.Insert(record[0], record[1])
+		tree.Insert(string(k), string(v))
 	}
 }
 
-func (s Store) Get(key []byte) ([]byte, error) {
+func (s Store) Get(k []byte) ([]byte, error) {
 	s.mux.RLock()
 	defer s.mux.RUnlock()
-	_, v, ok := s.tree.LongestPrefix(string(key))
+	_, v, ok := s.tree.LongestPrefix(string(k))
 	if !ok {
-		return nil, store.KeyNotFoundError(key)
+		return nil, store.KeyNotFoundError(k)
 	}
 	return []byte(v.(string)), nil
 }
