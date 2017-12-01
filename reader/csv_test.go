@@ -1,4 +1,4 @@
-package csvreader
+package reader
 
 import (
 	"io"
@@ -6,15 +6,14 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/yowcow/goromdb/reader"
 )
 
-func TestNew(t *testing.T) {
+func TestNewCSVReader(t *testing.T) {
 	rdr := strings.NewReader("")
-	New(rdr)
+	NewCSVReader(rdr)
 }
 
-func TestRead(t *testing.T) {
+func TestCSVReaderRead(t *testing.T) {
 	type Case struct {
 		input         string
 		shouldSucceed bool
@@ -43,7 +42,7 @@ func TestRead(t *testing.T) {
 		},
 	}
 
-	returnReaderError := func(r reader.Reader) error {
+	returnReaderError := func(r Reader) error {
 		for {
 			_, _, err := r.Read()
 			if err == io.EOF {
@@ -58,7 +57,7 @@ func TestRead(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.subtest, func(t *testing.T) {
 			rdr := strings.NewReader(c.input)
-			r := New(rdr)
+			r := NewCSVReader(rdr)
 			err := returnReaderError(r)
 
 			assert.Equal(t, c.shouldSucceed, err == nil)
@@ -66,13 +65,13 @@ func TestRead(t *testing.T) {
 	}
 }
 
-func TestReadReturnsExpectedKeyValue(t *testing.T) {
+func TestCSVReaderReadReturnsExpectedKeyValue(t *testing.T) {
 	rdr := strings.NewReader(`hoge,hoge!
 fuga,fuga!!
 foo,foo!!!
 bar,bar!!!!
 `)
-	r := New(rdr)
+	r := NewCSVReader(rdr)
 
 	type Expected struct {
 		key []byte

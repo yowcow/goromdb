@@ -1,23 +1,24 @@
-package csvreader
+package reader
 
 import (
 	"encoding/csv"
 	"fmt"
 	"io"
-
-	"github.com/yowcow/goromdb/reader"
 )
 
-type Reader struct {
+// CSVReader represents a simple CSV reader
+type CSVReader struct {
 	r *csv.Reader
 }
 
-func New(r io.Reader) reader.Reader {
+// NewCSVReader creates a CSVReader
+func NewCSVReader(r io.Reader) Reader {
 	csvr := csv.NewReader(r)
-	return &Reader{csvr}
+	return &CSVReader{csvr}
 }
 
-func (r Reader) Read() ([]byte, []byte, error) {
+// Read reads a line of CSV, and returns key-value pair
+func (r CSVReader) Read() ([]byte, []byte, error) {
 	rec, err := r.r.Read()
 	if err != nil {
 		return nil, nil, err
