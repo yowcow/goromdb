@@ -3,7 +3,6 @@ package radixstore
 import (
 	"bytes"
 	"encoding/csv"
-	"encoding/json"
 	"log"
 	"os"
 	"path/filepath"
@@ -15,8 +14,8 @@ import (
 	"github.com/yowcow/goromdb/testutil"
 )
 
-var sampleDataFile = "../../data/store/sample-radix.csv"
-var sampleDataFileGzipped = "../../data/store/sample-radix.csv.gz"
+var sampleDataFile = "../../data/store/sample-data.csv"
+var sampleDataFileGzipped = "../../data/store/sample-data.csv.gz"
 
 func TestNew(t *testing.T) {
 	dir := testutil.CreateTmpDir()
@@ -99,11 +98,10 @@ func TestGet(t *testing.T) {
 	s, _ := New(filein, false, dir, logger)
 	_ = s.Load(sampleDataFile)
 
-	type Data map[string]interface{}
 	type Case struct {
 		input         string
 		expectError   bool
-		expectedValue Data
+		expectedValue []byte
 		subtest       string
 	}
 	cases := []Case{
@@ -116,19 +114,13 @@ func TestGet(t *testing.T) {
 		{
 			"hoge",
 			false,
-			Data{
-				"key":   "hoge",
-				"value": "hoge!",
-			},
+			[]byte("hoge!"),
 			"exact match on key 'hoge' succeeds",
 		},
 		{
 			"hogefuga",
 			false,
-			Data{
-				"key":   "hoge",
-				"value": "hoge!",
-			},
+			[]byte("hoge!"),
 			"prefix match on key on 'hogefuga' succeeds",
 		},
 	}
@@ -136,14 +128,8 @@ func TestGet(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.subtest, func(t *testing.T) {
 			v, err := s.Get([]byte(c.input))
-			if c.expectError {
-				assert.NotNil(t, err)
-			} else {
-				var d Data
-				err = json.Unmarshal(v, &d)
-				assert.Nil(t, err)
-				assert.True(t, assert.ObjectsAreEqual(c.expectedValue, d))
-			}
+			assert.Equal(t, c.expectError, err != nil)
+			assert.Equal(t, c.expectedValue, v)
 		})
 	}
 }
