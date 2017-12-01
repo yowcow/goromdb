@@ -7,7 +7,7 @@ import (
 	"os"
 )
 
-type Data map[string]interface{}
+type Data map[string]string
 
 func main() {
 	var jsonFile string
@@ -40,16 +40,14 @@ func writeCSV(jsonFile, csvFile string) {
 	defer fo.Close()
 
 	w := csv.NewWriter(fo)
+	err = w.Write([]string{"key", "value"}) // header line
+	if err != nil {
+		panic(err)
+	}
+	w.Flush()
+
 	for k, v := range data {
-		rowdata := Data{
-			"key":   k,
-			"value": v,
-		}
-		rowjson, err := json.Marshal(rowdata)
-		if err != nil {
-			panic(err)
-		}
-		err = w.Write([]string{k, string(rowjson)})
+		err = w.Write([]string{k, v})
 		if err != nil {
 			panic(err)
 		}

@@ -2,8 +2,6 @@ package radixstore
 
 import (
 	"bytes"
-	"encoding/csv"
-	"encoding/json"
 	"log"
 	"os"
 	"path/filepath"
@@ -12,11 +10,12 @@ import (
 
 	"github.com/armon/go-radix"
 	"github.com/stretchr/testify/assert"
+	"github.com/yowcow/goromdb/reader"
 	"github.com/yowcow/goromdb/testutil"
 )
 
-var sampleDataFile = "../../data/store/sample-radix.csv"
-var sampleDataFileGzipped = "../../data/store/sample-radix.csv.gz"
+var sampleDataFile = "../../data/store/sample-data.csv"
+var sampleDataFileGzipped = "../../data/store/sample-data.csv.gz"
 
 func TestNew(t *testing.T) {
 	dir := testutil.CreateTmpDir()
@@ -25,7 +24,12 @@ func TestNew(t *testing.T) {
 	filein := make(chan string)
 	logbuf := new(bytes.Buffer)
 	logger := log.New(logbuf, "", 0)
-	_, err := New(filein, false, dir, logger)
+
+	_, err := New(filein, false, dir, nil, logger)
+
+	assert.NotNil(t, err)
+
+	_, err = New(filein, false, dir, reader.NewCSVReader, logger)
 
 	assert.Nil(t, err)
 }
@@ -52,7 +56,7 @@ func TestBuildTree(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.subtest, func(t *testing.T) {
 			tree := radix.New()
-			r := csv.NewReader(strings.NewReader(c.input))
+			r := reader.NewCSVReader(strings.NewReader(c.input))
 			err := buildTree(tree, r)
 			assert.Equal(t, c.expectError, err != nil)
 		})
@@ -81,7 +85,7 @@ func TestLoad(t *testing.T) {
 			filein := make(chan string)
 			logbuf := new(bytes.Buffer)
 			logger := log.New(logbuf, "", 0)
-			s, _ := New(filein, c.gzipped, dir, logger)
+			s, _ := New(filein, c.gzipped, dir, reader.NewCSVReader, logger)
 
 			err := s.Load(c.input)
 			assert.Equal(t, c.expectError, err != nil)
@@ -96,14 +100,13 @@ func TestGet(t *testing.T) {
 	filein := make(chan string)
 	logbuf := new(bytes.Buffer)
 	logger := log.New(logbuf, "", 0)
-	s, _ := New(filein, false, dir, logger)
+	s, _ := New(filein, false, dir, reader.NewCSVReader, logger)
 	_ = s.Load(sampleDataFile)
 
-	type Data map[string]interface{}
 	type Case struct {
 		input         string
 		expectError   bool
-		expectedValue Data
+		expectedValue []byte
 		subtest       string
 	}
 	cases := []Case{
@@ -116,19 +119,13 @@ func TestGet(t *testing.T) {
 		{
 			"hoge",
 			false,
-			Data{
-				"key":   "hoge",
-				"value": "hoge!",
-			},
+			[]byte("hoge!"),
 			"exact match on key 'hoge' succeeds",
 		},
 		{
 			"hogefuga",
 			false,
-			Data{
-				"key":   "hoge",
-				"value": "hoge!",
-			},
+			[]byte("hoge!"),
 			"prefix match on key on 'hogefuga' succeeds",
 		},
 	}
@@ -136,14 +133,8 @@ func TestGet(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.subtest, func(t *testing.T) {
 			v, err := s.Get([]byte(c.input))
-			if c.expectError {
-				assert.NotNil(t, err)
-			} else {
-				var d Data
-				err = json.Unmarshal(v, &d)
-				assert.Nil(t, err)
-				assert.True(t, assert.ObjectsAreEqual(c.expectedValue, d))
-			}
+			assert.Equal(t, c.expectError, err != nil)
+			assert.Equal(t, c.expectedValue, v)
 		})
 	}
 }
@@ -155,7 +146,7 @@ func TestStart(t *testing.T) {
 	filein := make(chan string)
 	logbuf := new(bytes.Buffer)
 	logger := log.New(logbuf, "", 0)
-	s, _ := New(filein, false, dir, logger)
+	s, _ := New(filein, false, dir, reader.NewCSVReader, logger)
 	done := s.Start()
 
 	file := filepath.Join(dir, "drop-in")
