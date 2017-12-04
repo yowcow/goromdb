@@ -19,26 +19,6 @@ func New() storage.Storage {
 	}
 }
 
-func (s *Storage) Get(key []byte) ([]byte, error) {
-	v, ok := s.data[string(key)]
-	if ok {
-		if v != nil {
-			return v, nil
-		}
-		return nil, storage.KeyNotFoundError(key)
-	}
-	if s.db != nil {
-		v, err := s.db.Get(bdb.NoTxn, key, 0)
-		if err != nil {
-			s.data[string(key)] = nil
-			return nil, storage.KeyNotFoundError(key)
-		}
-		s.data[string(key)] = v
-		return v, nil
-	}
-	return nil, storage.KeyNotFoundError(key)
-}
-
 func (s *Storage) Load(file string) error {
 	db, err := openBDB(file)
 	if err != nil {
@@ -57,4 +37,24 @@ func (s *Storage) Load(file string) error {
 
 func openBDB(file string) (*bdb.BerkeleyDB, error) {
 	return bdb.OpenBDB(bdb.NoEnv, bdb.NoTxn, file, nil, bdb.BTree, bdb.DbReadOnly, 0)
+}
+
+func (s *Storage) Get(key []byte) ([]byte, error) {
+	v, ok := s.data[string(key)]
+	if ok {
+		if v != nil {
+			return v, nil
+		}
+		return nil, storage.KeyNotFoundError(key)
+	}
+	if s.db != nil {
+		v, err := s.db.Get(bdb.NoTxn, key, 0)
+		if err != nil {
+			s.data[string(key)] = nil
+			return nil, storage.KeyNotFoundError(key)
+		}
+		s.data[string(key)] = v
+		return v, nil
+	}
+	return nil, storage.KeyNotFoundError(key)
 }

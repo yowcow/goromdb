@@ -23,14 +23,6 @@ func New(gzipped bool) storage.Storage {
 	}
 }
 
-func (s Storage) Get(key []byte) ([]byte, error) {
-	k := string(key)
-	if v, ok := s.data[k]; ok {
-		return []byte(v), nil
-	}
-	return nil, storage.KeyNotFoundError(key)
-}
-
 func (s *Storage) Load(file string) error {
 	fi, err := os.Open(file)
 	if err != nil {
@@ -61,4 +53,12 @@ func (s Storage) newReader(rdr io.Reader) (io.Reader, error) {
 		return r, nil
 	}
 	return rdr, nil
+}
+
+func (s Storage) Get(key []byte) ([]byte, error) {
+	k := string(key)
+	if v, ok := s.data[k]; ok {
+		return []byte(v), nil
+	}
+	return nil, storage.KeyNotFoundError(key)
 }

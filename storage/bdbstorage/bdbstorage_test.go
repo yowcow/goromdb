@@ -6,11 +6,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var sampleDBFile = "../../data/store/sample-bdb.db"
+
 func TestNew(t *testing.T) {
 	New()
 }
-
-var sampleDBFile = "../../data/store/sample-bdb.db"
 
 func TestLoad(t *testing.T) {
 	type Case struct {
@@ -23,6 +23,11 @@ func TestLoad(t *testing.T) {
 			"./",
 			true,
 			"loading directory fails",
+		},
+		{
+			sampleDBFile + ".hoge",
+			true,
+			"loading non-existing file fails",
 		},
 		{
 			sampleDBFile,
