@@ -1,4 +1,4 @@
-package store
+package loader
 
 import (
 	"os"
@@ -63,11 +63,11 @@ func TestBuildDirs(t *testing.T) {
 	}
 }
 
-func TestNewLoader(t *testing.T) {
+func TestNew(t *testing.T) {
 	dir := testutil.CreateTmpDir()
 	defer os.RemoveAll(dir)
 
-	loader, err := NewLoader(dir, "test.data")
+	loader, err := New(dir, "test.data")
 
 	assert.Nil(t, err)
 	assert.NotNil(t, loader)
@@ -77,7 +77,7 @@ func TestFindAny(t *testing.T) {
 	dir := testutil.CreateTmpDir()
 	defer os.RemoveAll(dir)
 
-	loader, _ := NewLoader(dir, "test.data")
+	loader, _ := New(dir, "test.data")
 	file00 := filepath.Join(dir, "data00", "test.data")
 	file01 := filepath.Join(dir, "data01", "test.data")
 
@@ -138,7 +138,7 @@ func TestDropIn(t *testing.T) {
 		},
 	}
 
-	loader, _ := NewLoader(dir, "test.data")
+	loader, _ := New(dir, "test.data")
 	for _, c := range cases {
 		t.Run(c.subtest, func(t *testing.T) {
 			input := filepath.Join(dir, "dropped-in")
@@ -191,7 +191,7 @@ func TestCleanUp(t *testing.T) {
 		},
 	}
 
-	loader, _ := NewLoader(dir, "test.data")
+	loader, _ := New(dir, "test.data")
 	for _, c := range cases {
 		t.Run(c.subtest, func(t *testing.T) {
 			input := filepath.Join(dir, "dropped-in")

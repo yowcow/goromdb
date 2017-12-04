@@ -1,4 +1,4 @@
-package store
+package loader
 
 import (
 	"fmt"
@@ -23,7 +23,7 @@ type Loader struct {
 }
 
 // NewLoader creates a new loader
-func NewLoader(basedir, filename string) (*Loader, error) {
+func New(basedir, filename string) (*Loader, error) {
 	dirs, err := buildDirs(basedir, DirCount)
 	if err != nil {
 		return nil, err
