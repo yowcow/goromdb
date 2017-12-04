@@ -18,6 +18,9 @@ type jsonRowData map[string]string
 func NewCSV2JSONReader(r io.Reader) Reader {
 	csvr := csv.NewReader(r)
 	cols, _ := csvr.Read()
+	if len(cols) > 0 {
+		cols = cols[1:len(cols)]
+	}
 	return &CSV2JSONReader{csvr, cols}
 }
 
@@ -29,7 +32,7 @@ func (r CSV2JSONReader) Read() ([]byte, []byte, error) {
 	}
 	row := make(jsonRowData)
 	for i, col := range r.cols {
-		row[col] = rec[i]
+		row[col] = rec[i+1]
 	}
 	v, err := json.Marshal(row)
 	if err != nil {

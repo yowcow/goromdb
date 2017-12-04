@@ -19,6 +19,9 @@ type msgpackRowData map[string]string
 func NewCSV2MsgpackReader(r io.Reader) Reader {
 	csvr := csv.NewReader(r)
 	cols, _ := csvr.Read()
+	if len(cols) > 1 {
+		cols = cols[1:len(cols)]
+	}
 	return &CSV2MsgpackReader{csvr, cols}
 }
 
@@ -30,7 +33,7 @@ func (r CSV2MsgpackReader) Read() ([]byte, []byte, error) {
 	}
 	row := make(msgpackRowData)
 	for i, col := range r.cols {
-		row[col] = rec[i]
+		row[col] = rec[i+1]
 	}
 	v, err := msgpack.Marshal(row)
 	if err != nil {

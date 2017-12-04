@@ -11,16 +11,34 @@ import (
 )
 
 func TestNewCSV2MsgpackReader(t *testing.T) {
-	r := strings.NewReader("")
-	NewCSV2MsgpackReader(r)
+	type Case struct {
+		input, subtest string
+	}
+	cases := []Case{
+		{
+			"",
+			"empty string succeeds",
+		},
+		{
+			"key",
+			"1-column string succeeds",
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.subtest, func(t *testing.T) {
+			r := strings.NewReader(c.input)
+			NewCSV2MsgpackReader(r)
+		})
+	}
 }
 
 func TestCSV2MsgpackReaderReads(t *testing.T) {
-	r := strings.NewReader(`x,a
-1,2
-3,4
-5,6
-7
+	r := strings.NewReader(`key,x,a
+item1,1,2
+item2,3,4
+item3,5,6
+item4,7
 `)
 	cmr := NewCSV2MsgpackReader(r)
 
@@ -30,21 +48,21 @@ func TestCSV2MsgpackReaderReads(t *testing.T) {
 	}
 	expected := []Expected{
 		{
-			[]byte("1"),
+			[]byte("item1"),
 			msgpackRowData{
 				"a": "2",
 				"x": "1",
 			},
 		},
 		{
-			[]byte("3"),
+			[]byte("item2"),
 			msgpackRowData{
 				"a": "4",
 				"x": "3",
 			},
 		},
 		{
-			[]byte("5"),
+			[]byte("item3"),
 			msgpackRowData{
 				"a": "6",
 				"x": "5",
