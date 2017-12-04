@@ -1,4 +1,4 @@
-package simplestore
+package simplegateway
 
 import (
 	"bytes"

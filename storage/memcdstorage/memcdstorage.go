@@ -15,7 +15,7 @@ type Storage struct {
 	proxy storage.Storage
 }
 
-func New(proxy storage.Storage) storage.Storage {
+func New(proxy storage.Storage) *Storage {
 	return &Storage{proxy}
 }
 

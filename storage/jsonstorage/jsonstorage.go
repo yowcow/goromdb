@@ -16,7 +16,7 @@ type Storage struct {
 	data    Data
 }
 
-func New(gzipped bool) storage.Storage {
+func New(gzipped bool) *Storage {
 	return &Storage{
 		gzipped,
 		make(Data),
@@ -61,4 +61,14 @@ func (s Storage) Get(key []byte) ([]byte, error) {
 		return []byte(v), nil
 	}
 	return nil, storage.KeyNotFoundError(key)
+}
+
+func (s Storage) AllKeys() [][]byte {
+	keys := make([][]byte, len(s.data))
+	i := 0
+	for k, _ := range s.data {
+		keys[i] = []byte(k)
+		i++
+	}
+	return keys
 }

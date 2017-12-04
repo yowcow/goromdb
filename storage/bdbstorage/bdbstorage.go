@@ -12,7 +12,7 @@ type Storage struct {
 	data Data
 }
 
-func New() storage.Storage {
+func New() *Storage {
 	return &Storage{
 		nil,
 		make(Data),

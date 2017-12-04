@@ -9,6 +9,11 @@ type Storage interface {
 	Load(string) error
 }
 
+type IndexableStorage interface {
+	Storage
+	AllKeys() [][]byte
+}
+
 func KeyNotFoundError(key []byte) error {
 	return fmt.Errorf("key not found error: %s", string(key))
 }

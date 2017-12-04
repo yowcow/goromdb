@@ -1,6 +1,7 @@
 package jsonstorage
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -89,4 +90,17 @@ func TestGet(t *testing.T) {
 			assert.Equal(t, c.expectedVal, v)
 		})
 	}
+}
+
+func TestAllKeys(t *testing.T) {
+	s := New(false)
+	res1 := s.AllKeys()
+
+	assert.True(t, reflect.DeepEqual([][]byte{}, res1))
+
+	s.Load("valid.json")
+	res2 := s.AllKeys()
+
+	assert.Contains(t, res2, []byte("hoge"))
+	assert.Contains(t, res2, []byte("fuga"))
 }
