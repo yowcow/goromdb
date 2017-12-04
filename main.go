@@ -7,16 +7,17 @@ import (
 	"log"
 	"os"
 
+	"github.com/yowcow/goromdb/gateway"
+	"github.com/yowcow/goromdb/gateway/radixgateway"
+	"github.com/yowcow/goromdb/gateway/simplegateway"
 	"github.com/yowcow/goromdb/loader"
 	"github.com/yowcow/goromdb/protocol"
 	"github.com/yowcow/goromdb/protocol/memcachedprotocol"
-	"github.com/yowcow/goromdb/reader"
 	"github.com/yowcow/goromdb/server"
-	"github.com/yowcow/goromdb/store"
-	"github.com/yowcow/goromdb/store/bdbstore"
-	"github.com/yowcow/goromdb/store/jsonstore"
-	"github.com/yowcow/goromdb/store/mdbstore"
-	"github.com/yowcow/goromdb/store/radixstore"
+	"github.com/yowcow/goromdb/storage"
+	"github.com/yowcow/goromdb/storage/bdbstorage"
+	"github.com/yowcow/goromdb/storage/jsonstorage"
+	"github.com/yowcow/goromdb/storage/memcdstorage"
 	"github.com/yowcow/goromdb/watcher"
 )
 
@@ -25,7 +26,8 @@ var Version string
 func main() {
 	var addr string
 	var protoBackend string
-	var storeBackend string
+	var gatewayBackend string
+	var storageBackend string
 	var file string
 	var gzipped bool
 	var basedir string
@@ -34,7 +36,8 @@ func main() {
 
 	flag.StringVar(&addr, "addr", ":11211", "address to bind to")
 	flag.StringVar(&protoBackend, "proto", "memcached", "protocol: memcached")
-	flag.StringVar(&storeBackend, "store", "jsonstore", "store: jsonstore, bdbstore, memcachedb-bdbstore, radixstore")
+	flag.StringVar(&gatewayBackend, "gateway", "simple", "gateway: simple, radix")
+	flag.StringVar(&storageBackend, "storage", "json", "storage: json, bdb, bdb-memcachedb")
 	flag.StringVar(&file, "file", "/tmp/goromdb", "data file to be loaded into store")
 	flag.BoolVar(&gzipped, "gzipped", false, "whether or not loading file is gzipped")
 	flag.StringVar(&basedir, "basedir", "", "base directory to store loaded data file")
@@ -63,18 +66,28 @@ func main() {
 	wcr := watcher.New(file, 5000, logger)
 	filein := wcr.Start(ctx)
 
-	st, err := createStore(storeBackend, filein, gzipped, basedir, logger)
+	stg, err := createStorage(storageBackend, gzipped)
 	if err != nil {
 		panic(err)
 	}
-	done := st.Start()
+
+	ldr, err := loader.New(basedir, "data.db")
+	if err != nil {
+		panic(err)
+	}
+
+	gw, err := createGateway(gatewayBackend, filein, ldr, stg, logger)
+	if err != nil {
+		panic(err)
+	}
+	done := gw.Start()
 
 	logger.Printf(
-		"booting goromdb (address: %s, protocol: %s, store: %s, file: %s)",
-		addr, protoBackend, storeBackend, file,
+		"booting goromdb (address: %s, protocol: %s, gateway: %s, storage: %s, file: %s)",
+		addr, protoBackend, gatewayBackend, storageBackend, file,
 	)
 
-	svr := server.New("tcp", addr, proto, st, logger)
+	svr := server.New("tcp", addr, proto, gw, logger)
 	err = svr.Start()
 	if err != nil {
 		logger.Printf("failed booting goromdb: %s", err.Error())
@@ -85,42 +98,42 @@ func main() {
 
 }
 
+func createGateway(
+	gatewayBackend string,
+	filein <-chan string,
+	ldr *loader.Loader,
+	stg storage.IndexableStorage,
+	logger *log.Logger,
+) (gateway.Gateway, error) {
+	switch gatewayBackend {
+	case "simple":
+		return simplegateway.New(filein, ldr, stg, logger), nil
+	case "radix":
+		return radixgateway.New(filein, ldr, stg, logger), nil
+	default:
+		return nil, fmt.Errorf("don't know how to handle gateway '%s'", gatewayBackend)
+	}
+}
+
+func createStorage(storageBackend string, gzipped bool) (storage.IndexableStorage, error) {
+	switch storageBackend {
+	case "json":
+		return jsonstorage.New(gzipped), nil
+	case "bdb":
+		return bdbstorage.New(), nil
+	case "bdb-memcachedb":
+		p := bdbstorage.New()
+		return memcdstorage.New(p), nil
+	default:
+		return nil, fmt.Errorf("don't know how to handle storage '%s'", storageBackend)
+	}
+}
+
 func createProtocol(protoBackend string) (protocol.Protocol, error) {
 	switch protoBackend {
 	case "memcached":
 		return memcachedprotocol.New(), nil
 	default:
 		return nil, fmt.Errorf("don't know how to handle protocol '%s'", protoBackend)
-	}
-}
-
-func createStore(storeBackend string, filein <-chan string, gzipped bool, basedir string, logger *log.Logger) (store.Store, error) {
-	switch storeBackend {
-	case "jsonstore":
-		return jsonstore.New(filein, gzipped, logger)
-	case "bdbstore":
-		ldr, err := loader.New(basedir, "data.db")
-		if err != nil {
-			return nil, err
-		}
-		return bdbstore.New(filein, ldr, logger)
-	case "memcachedb-bdbstore":
-		ldr, err := loader.New(basedir, "data.db")
-		if err != nil {
-			return nil, err
-		}
-		bs, err := bdbstore.New(filein, ldr, logger)
-		if err != nil {
-			return nil, err
-		}
-		return mdbstore.New(bs, logger)
-	case "radixstore":
-		ldr, err := loader.New(basedir, "radix.data")
-		if err != nil {
-			return nil, err
-		}
-		return radixstore.New(filein, gzipped, ldr, reader.NewCSV2MsgpackReader, logger)
-	default:
-		return nil, fmt.Errorf("don't know how to handle store '%s'", storeBackend)
 	}
 }

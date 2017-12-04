@@ -12,10 +12,10 @@ import (
 const _Zero uint8 = 0
 
 type Storage struct {
-	proxy storage.Storage
+	proxy storage.IndexableStorage
 }
 
-func New(proxy storage.Storage) *Storage {
+func New(proxy storage.IndexableStorage) *Storage {
 	return &Storage{proxy}
 }
 
@@ -34,6 +34,10 @@ func (s Storage) Get(key []byte) ([]byte, error) {
 		return nil, storage.KeyNotFoundError(key)
 	}
 	return v, nil
+}
+
+func (s Storage) AllKeys() [][]byte {
+	return s.proxy.AllKeys()
 }
 
 // Serialize serializes given key and value into MemcacheDB format binary, and writes to writer

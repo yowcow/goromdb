@@ -58,3 +58,7 @@ func (s *Storage) Get(key []byte) ([]byte, error) {
 	}
 	return nil, storage.KeyNotFoundError(key)
 }
+
+func (s Storage) AllKeys() [][]byte {
+	return nil
+}
