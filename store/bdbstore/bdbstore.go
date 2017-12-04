@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/ajiyoshi-vg/goberkeleydb/bdb"
+	"github.com/yowcow/goromdb/loader"
 	"github.com/yowcow/goromdb/store"
 )
 
@@ -16,23 +17,19 @@ type Data map[string][]byte
 type Store struct {
 	data   Data
 	filein <-chan string
-	loader *store.Loader
+	loader *loader.Loader
 	db     *bdb.BerkeleyDB
 	mux    *sync.RWMutex
 	logger *log.Logger
 }
 
 // New creates a store
-func New(filein <-chan string, basedir string, logger *log.Logger) (store.Store, error) {
+func New(filein <-chan string, ldr *loader.Loader, logger *log.Logger) (store.Store, error) {
 	data := make(Data)
-	loader, err := store.NewLoader(basedir, "data.db")
-	if err != nil {
-		return nil, err
-	}
 	return &Store{
 		data,
 		filein,
-		loader,
+		ldr,
 		nil,
 		new(sync.RWMutex),
 		logger,

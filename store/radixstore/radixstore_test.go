@@ -10,6 +10,7 @@ import (
 
 	"github.com/armon/go-radix"
 	"github.com/stretchr/testify/assert"
+	"github.com/yowcow/goromdb/loader"
 	"github.com/yowcow/goromdb/reader"
 	"github.com/yowcow/goromdb/testutil"
 )
@@ -22,14 +23,15 @@ func TestNew(t *testing.T) {
 	defer os.RemoveAll(dir)
 
 	filein := make(chan string)
+	ldr, _ := loader.New(dir, "radix.data")
 	logbuf := new(bytes.Buffer)
 	logger := log.New(logbuf, "", 0)
 
-	_, err := New(filein, false, dir, nil, logger)
+	_, err := New(filein, false, ldr, nil, logger)
 
 	assert.NotNil(t, err)
 
-	_, err = New(filein, false, dir, reader.NewCSVReader, logger)
+	_, err = New(filein, false, ldr, reader.NewCSVReader, logger)
 
 	assert.Nil(t, err)
 }
@@ -83,9 +85,10 @@ func TestLoad(t *testing.T) {
 			defer os.RemoveAll(dir)
 
 			filein := make(chan string)
+			ldr, _ := loader.New(dir, "radix.data")
 			logbuf := new(bytes.Buffer)
 			logger := log.New(logbuf, "", 0)
-			s, _ := New(filein, c.gzipped, dir, reader.NewCSVReader, logger)
+			s, _ := New(filein, c.gzipped, ldr, reader.NewCSVReader, logger)
 
 			err := s.Load(c.input)
 			assert.Equal(t, c.expectError, err != nil)
@@ -98,9 +101,10 @@ func TestGet(t *testing.T) {
 	defer os.RemoveAll(dir)
 
 	filein := make(chan string)
+	ldr, _ := loader.New(dir, "radix.data")
 	logbuf := new(bytes.Buffer)
 	logger := log.New(logbuf, "", 0)
-	s, _ := New(filein, false, dir, reader.NewCSVReader, logger)
+	s, _ := New(filein, false, ldr, reader.NewCSVReader, logger)
 	_ = s.Load(sampleDataFile)
 
 	type Case struct {
@@ -149,9 +153,10 @@ func TestStart(t *testing.T) {
 	defer os.RemoveAll(dir)
 
 	filein := make(chan string)
+	ldr, _ := loader.New(dir, "radix.data")
 	logbuf := new(bytes.Buffer)
 	logger := log.New(logbuf, "", 0)
-	s, _ := New(filein, false, dir, reader.NewCSVReader, logger)
+	s, _ := New(filein, false, ldr, reader.NewCSVReader, logger)
 	done := s.Start()
 
 	file := filepath.Join(dir, "drop-in")

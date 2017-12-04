@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/yowcow/goromdb/loader"
 	"github.com/yowcow/goromdb/testutil"
 )
 
@@ -18,9 +19,10 @@ func TestNew(t *testing.T) {
 	defer os.RemoveAll(dir)
 
 	filein := make(chan string)
+	ldr, _ := loader.New(dir, "data.db")
 	buf := new(bytes.Buffer)
 	logger := log.New(buf, "", 0)
-	_, err := New(filein, dir, logger)
+	_, err := New(filein, ldr, logger)
 
 	assert.Nil(t, err)
 }
@@ -30,9 +32,10 @@ func TestLoad(t *testing.T) {
 	defer os.RemoveAll(dir)
 
 	filein := make(chan string)
+	ldr, _ := loader.New(dir, "data.db")
 	buf := new(bytes.Buffer)
 	logger := log.New(buf, "", 0)
-	s, _ := New(filein, dir, logger)
+	s, _ := New(filein, ldr, logger)
 
 	type Case struct {
 		input       string
@@ -75,9 +78,10 @@ func TestGet(t *testing.T) {
 	defer os.RemoveAll(dir)
 
 	filein := make(chan string)
+	ldr, _ := loader.New(dir, "data.db")
 	logbuf := new(bytes.Buffer)
 	logger := log.New(logbuf, "", 0)
-	s, _ := New(filein, dir, logger)
+	s, _ := New(filein, ldr, logger)
 	s.Load(sampleDBFile)
 
 	type Case struct {
@@ -134,9 +138,10 @@ func TestStart(t *testing.T) {
 	defer os.RemoveAll(dir)
 
 	filein := make(chan string)
+	ldr, _ := loader.New(dir, "data.db")
 	logbuf := new(bytes.Buffer)
 	logger := log.New(logbuf, "", 0)
-	s, _ := New(filein, dir, logger)
+	s, _ := New(filein, ldr, logger)
 	done := s.Start()
 
 	file := filepath.Join(dir, "dropin.db")

@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"github.com/armon/go-radix"
+	"github.com/yowcow/goromdb/loader"
 	"github.com/yowcow/goromdb/reader"
 	"github.com/yowcow/goromdb/store"
 )
@@ -16,7 +17,7 @@ type Store struct {
 	tree             *radix.Tree
 	filein           <-chan string
 	gzipped          bool
-	loader           *store.Loader
+	loader           *loader.Loader
 	createReaderFunc reader.NewReaderFunc
 	mux              *sync.RWMutex
 	logger           *log.Logger
@@ -25,14 +26,10 @@ type Store struct {
 func New(
 	filein <-chan string,
 	gzipped bool,
-	basedir string,
+	ldr *loader.Loader,
 	createReaderFunc reader.NewReaderFunc,
 	logger *log.Logger,
 ) (store.Store, error) {
-	loader, err := store.NewLoader(basedir, "data.csv")
-	if err != nil {
-		return nil, err
-	}
 	if createReaderFunc == nil {
 		return nil, fmt.Errorf("createReaderFunc cannot be a nil")
 	}
@@ -40,7 +37,7 @@ func New(
 		radix.New(),
 		filein,
 		gzipped,
-		loader,
+		ldr,
 		createReaderFunc,
 		new(sync.RWMutex),
 		logger,

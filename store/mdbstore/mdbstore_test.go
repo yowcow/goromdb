@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/yowcow/goromdb/loader"
 	"github.com/yowcow/goromdb/store/bdbstore"
 	"github.com/yowcow/goromdb/testutil"
 )
@@ -48,9 +49,10 @@ func TestNew(t *testing.T) {
 	defer os.RemoveAll(dir)
 
 	filein := make(chan string)
+	ldr, _ := loader.New(dir, "data.db")
 	logbuf := new(bytes.Buffer)
 	logger := log.New(logbuf, "", 0)
-	bdb, err := bdbstore.New(filein, dir, logger)
+	bdb, err := bdbstore.New(filein, ldr, logger)
 
 	assert.Nil(t, err)
 
@@ -64,9 +66,10 @@ func TestLoad(t *testing.T) {
 	defer os.RemoveAll(dir)
 
 	filein := make(chan string)
+	ldr, _ := loader.New(dir, "data.db")
 	logbuf := new(bytes.Buffer)
 	logger := log.New(logbuf, "", 0)
-	bdb, _ := bdbstore.New(filein, dir, logger)
+	bdb, _ := bdbstore.New(filein, ldr, logger)
 	mdb, _ := New(bdb, logger)
 
 	type Case struct {
@@ -110,9 +113,10 @@ func TestGet(t *testing.T) {
 	defer os.RemoveAll(dir)
 
 	filein := make(chan string)
+	ldr, _ := loader.New(dir, "data.db")
 	logbuf := new(bytes.Buffer)
 	logger := log.New(logbuf, "", 0)
-	bdb, _ := bdbstore.New(filein, dir, logger)
+	bdb, _ := bdbstore.New(filein, ldr, logger)
 	s, _ := New(bdb, logger)
 	s.Load(sampleDBFile)
 
@@ -169,9 +173,10 @@ func TestStart(t *testing.T) {
 	defer os.RemoveAll(dir)
 
 	filein := make(chan string)
+	ldr, err := loader.New(dir, "data.db")
 	logbuf := new(bytes.Buffer)
 	logger := log.New(logbuf, "", 0)
-	bdb, _ := bdbstore.New(filein, dir, logger)
+	bdb, _ := bdbstore.New(filein, ldr, logger)
 	s, _ := New(bdb, logger)
 	s.Load(sampleDBFile)
 	done := s.Start()

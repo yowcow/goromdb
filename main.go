@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/yowcow/goromdb/loader"
 	"github.com/yowcow/goromdb/protocol"
 	"github.com/yowcow/goromdb/protocol/memcachedprotocol"
 	"github.com/yowcow/goromdb/reader"
@@ -98,15 +99,27 @@ func createStore(storeBackend string, filein <-chan string, gzipped bool, basedi
 	case "jsonstore":
 		return jsonstore.New(filein, gzipped, logger)
 	case "bdbstore":
-		return bdbstore.New(filein, basedir, logger)
+		ldr, err := loader.New(basedir, "data.db")
+		if err != nil {
+			return nil, err
+		}
+		return bdbstore.New(filein, ldr, logger)
 	case "memcachedb-bdbstore":
-		bs, err := bdbstore.New(filein, basedir, logger)
+		ldr, err := loader.New(basedir, "data.db")
+		if err != nil {
+			return nil, err
+		}
+		bs, err := bdbstore.New(filein, ldr, logger)
 		if err != nil {
 			return nil, err
 		}
 		return mdbstore.New(bs, logger)
 	case "radixstore":
-		return radixstore.New(filein, gzipped, basedir, reader.NewCSV2MsgpackReader, logger)
+		ldr, err := loader.New(basedir, "radix.data")
+		if err != nil {
+			return nil, err
+		}
+		return radixstore.New(filein, gzipped, ldr, reader.NewCSV2MsgpackReader, logger)
 	default:
 		return nil, fmt.Errorf("don't know how to handle store '%s'", storeBackend)
 	}
