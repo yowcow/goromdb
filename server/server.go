@@ -48,13 +48,15 @@ func (s Server) Start() error {
 
 // HandleConn handles a net.Conn
 func (s Server) HandleConn(conn net.Conn) {
-	defer conn.Close()
-
+	defer func() {
+		s.logger.Println("server got a client connection closed")
+		conn.Close()
+	}()
+	s.logger.Println("server got a new client connection")
 	r := bufio.NewReader(conn)
 	for {
 		line, _, err := r.ReadLine()
 		if err == io.EOF {
-			s.logger.Println("server got client connection closed")
 			return
 		}
 		if err != nil {
