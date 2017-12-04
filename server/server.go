@@ -6,33 +6,33 @@ import (
 	"log"
 	"net"
 
+	"github.com/yowcow/goromdb/gateway"
 	"github.com/yowcow/goromdb/protocol"
-	"github.com/yowcow/goromdb/store"
 )
 
 // Server represents a server
 type Server struct {
-	proto    string
+	network  string
 	addr     string
 	protocol protocol.Protocol
-	store    store.Store
+	gateway  gateway.Gateway
 	logger   *log.Logger
 }
 
 // New creates a new server
-func New(proto, addr string, protocol protocol.Protocol, store store.Store, logger *log.Logger) *Server {
+func New(network, addr string, p protocol.Protocol, gw gateway.Gateway, logger *log.Logger) *Server {
 	return &Server{
-		proto,
+		network,
 		addr,
-		protocol,
-		store,
+		p,
+		gw,
 		logger,
 	}
 }
 
 // Start starts a server and spawns a goroutine when a new connection is accepted
 func (s Server) Start() error {
-	ln, err := net.Listen(s.proto, s.addr)
+	ln, err := net.Listen(s.network, s.addr)
 	if err != nil {
 		return err
 	}
@@ -48,13 +48,15 @@ func (s Server) Start() error {
 
 // HandleConn handles a net.Conn
 func (s Server) HandleConn(conn net.Conn) {
-	defer conn.Close()
-
+	defer func() {
+		s.logger.Println("server got a client connection closed")
+		conn.Close()
+	}()
+	s.logger.Println("server got a new client connection")
 	r := bufio.NewReader(conn)
 	for {
 		line, _, err := r.ReadLine()
 		if err == io.EOF {
-			s.logger.Println("server got client connection closed")
 			return
 		}
 		if err != nil {
@@ -65,8 +67,8 @@ func (s Server) HandleConn(conn net.Conn) {
 			s.logger.Printf("server failed parsing a line: %s", err)
 		} else {
 			for _, k := range keys {
-				if v, _ := s.store.Get(k); v != nil {
-					s.protocol.Reply(conn, k, v)
+				if key, v, _ := s.gateway.Get(k); v != nil {
+					s.protocol.Reply(conn, key, v)
 				}
 			}
 		}

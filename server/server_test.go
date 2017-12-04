@@ -12,8 +12,10 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/yowcow/goromdb/gateway/simplegateway"
+	"github.com/yowcow/goromdb/loader"
 	"github.com/yowcow/goromdb/protocol"
-	"github.com/yowcow/goromdb/store"
+	"github.com/yowcow/goromdb/storage"
 	"github.com/yowcow/goromdb/testutil"
 )
 
@@ -50,44 +52,43 @@ func (p TestProtocol) Finish(w io.Writer) {
 
 type TestData map[string]string
 
-type TestStore struct {
+type TestStorage struct {
 	data   TestData
 	logger *log.Logger
 }
 
-func createTestStore(logger *log.Logger) store.Store {
+func createTestStorage(logger *log.Logger) storage.Storage {
 	data := TestData{
 		"foo": "foo!",
 		"bar": "bar!!",
 	}
-	return &TestStore{data, logger}
+	return &TestStorage{data, logger}
 }
 
-func (s TestStore) Start() <-chan bool {
+func (s TestStorage) Load(file string) error {
 	return nil
 }
 
-func (s TestStore) Load(file string) error {
-	return nil
-}
-
-func (s TestStore) Get(key []byte) ([]byte, error) {
+func (s TestStorage) Get(key []byte) ([]byte, error) {
 	if v, ok := s.data[string(key)]; ok {
 		return []byte(v), nil
 	}
-	return nil, store.KeyNotFoundError(key)
+	return nil, storage.KeyNotFoundError(key)
 }
 
 func TestHandleConn(t *testing.T) {
 	dir := testutil.CreateTmpDir()
 	defer os.RemoveAll(dir)
 
-	sock := filepath.Join(dir, "test.sock")
 	logbuf := new(bytes.Buffer)
 	logger := log.New(logbuf, "", 0)
 	p := createTestProtocol()
-	s := createTestStore(logger)
-	svr := New("unix", sock, p, s, logger)
+	stg := createTestStorage(logger)
+	ldr, _ := loader.New(dir, "test.data")
+	gw := simplegateway.New(nil, ldr, stg, logger)
+
+	sock := filepath.Join(dir, "test.sock")
+	svr := New("unix", sock, p, gw, logger)
 
 	done := make(chan bool)
 	ln, err := net.Listen("unix", sock)

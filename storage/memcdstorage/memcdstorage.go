@@ -1,40 +1,29 @@
-package mdbstore
+package memcdstorage
 
 import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
 	"io"
-	"log"
 
-	"github.com/yowcow/goromdb/store"
+	"github.com/yowcow/goromdb/storage"
 )
 
 const _Zero uint8 = 0
 
-// Store represents a store for memcachedb
-type Store struct {
-	proxy  store.Store
-	logger *log.Logger
+type Storage struct {
+	proxy storage.IndexableStorage
 }
 
-// New creates a store
-func New(proxy store.Store, logger *log.Logger) (store.Store, error) {
-	return &Store{proxy, logger}, nil
+func New(proxy storage.IndexableStorage) *Storage {
+	return &Storage{proxy}
 }
 
-// Start starts backend store goroutine, and returns their error
-func (s Store) Start() <-chan bool {
-	return s.proxy.Start()
-}
-
-// Load loads file into backend store, and returns their error
-func (s Store) Load(file string) error {
+func (s Storage) Load(file string) error {
 	return s.proxy.Load(file)
 }
 
-// Get returns a value from backend store after deserializing it into usable value
-func (s Store) Get(key []byte) ([]byte, error) {
+func (s Storage) Get(key []byte) ([]byte, error) {
 	val, err := s.proxy.Get(key)
 	if err != nil {
 		return nil, err
@@ -42,10 +31,13 @@ func (s Store) Get(key []byte) ([]byte, error) {
 	r := bytes.NewReader(val)
 	_, v, _, err := Deserialize(r)
 	if err != nil {
-		s.logger.Print("failed deserializing a value for key '", string(key), "' with error: ", err)
-		return nil, store.KeyNotFoundError(key)
+		return nil, storage.KeyNotFoundError(key)
 	}
 	return v, nil
+}
+
+func (s Storage) AllKeys() [][]byte {
+	return s.proxy.AllKeys()
 }
 
 // Serialize serializes given key and value into MemcacheDB format binary, and writes to writer
