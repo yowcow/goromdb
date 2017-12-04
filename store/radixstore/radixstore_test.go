@@ -106,6 +106,7 @@ func TestGet(t *testing.T) {
 	type Case struct {
 		input         string
 		expectError   bool
+		expectedKey   []byte
 		expectedValue []byte
 		subtest       string
 	}
@@ -114,17 +115,20 @@ func TestGet(t *testing.T) {
 			"aaa",
 			true,
 			nil,
+			nil,
 			"non-existing key fails",
 		},
 		{
 			"hoge",
 			false,
+			[]byte("hoge"),
 			[]byte("hoge!"),
 			"exact match on key 'hoge' succeeds",
 		},
 		{
 			"hogefuga",
 			false,
+			[]byte("hoge"),
 			[]byte("hoge!"),
 			"prefix match on key on 'hogefuga' succeeds",
 		},
@@ -132,8 +136,9 @@ func TestGet(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.subtest, func(t *testing.T) {
-			v, err := s.Get([]byte(c.input))
+			k, v, err := s.Get([]byte(c.input))
 			assert.Equal(t, c.expectError, err != nil)
+			assert.Equal(t, c.expectedKey, k)
 			assert.Equal(t, c.expectedValue, v)
 		})
 	}
@@ -155,7 +160,7 @@ func TestStart(t *testing.T) {
 		filein <- file
 	}
 
-	_, err := s.Get([]byte("hoge"))
+	_, _, err := s.Get([]byte("hoge"))
 	assert.Nil(t, err)
 
 	close(filein)

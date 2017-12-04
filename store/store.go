@@ -10,7 +10,7 @@ import (
 type Store interface {
 	Start() <-chan bool
 	Load(string) error
-	Get([]byte) ([]byte, error)
+	Get([]byte) ([]byte, []byte, error)
 }
 
 // KeyNotFoundError returns an error for key is not found

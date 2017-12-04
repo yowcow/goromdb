@@ -77,12 +77,12 @@ func (s *Store) Load(file string) error {
 	return nil
 }
 
-func (s Store) Get(key []byte) ([]byte, error) {
+func (s Store) Get(key []byte) ([]byte, []byte, error) {
 	s.mux.RLock()
 	defer s.mux.RUnlock()
 
 	if val, ok := s.data[string(key)]; ok {
-		return []byte(val), nil
+		return key, []byte(val), nil
 	}
-	return nil, store.KeyNotFoundError(key)
+	return nil, nil, store.KeyNotFoundError(key)
 }

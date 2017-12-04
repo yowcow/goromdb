@@ -100,23 +100,23 @@ func openBDB(file string) (*bdb.BerkeleyDB, error) {
 }
 
 // Get retrieves the value for given key from a store
-func (s *Store) Get(key []byte) ([]byte, error) {
+func (s *Store) Get(key []byte) ([]byte, []byte, error) {
 	s.mux.RLock()
 	defer s.mux.RUnlock()
 	k := string(key)
 	v, ok := s.data[k]
 	if ok && v != nil {
-		return v, nil
+		return key, v, nil
 	} else if ok && v == nil {
-		return nil, store.KeyNotFoundError(key)
+		return nil, nil, store.KeyNotFoundError(key)
 	} else if s.db != nil {
 		v, err := s.db.Get(bdb.NoTxn, key, 0)
 		if err != nil {
 			s.data[k] = nil
-			return nil, fmt.Errorf("bdbstore got error retrieving key '%s': %s", k, err.Error())
+			return nil, nil, fmt.Errorf("bdbstore got error retrieving key '%s': %s", k, err.Error())
 		}
 		s.data[k] = v
-		return v, nil
+		return key, v, nil
 	}
-	return nil, store.KeyNotFoundError(key)
+	return nil, nil, store.KeyNotFoundError(key)
 }

@@ -115,12 +115,12 @@ func buildTree(tree *radix.Tree, r reader.Reader) error {
 	}
 }
 
-func (s Store) Get(k []byte) ([]byte, error) {
+func (s Store) Get(k []byte) ([]byte, []byte, error) {
 	s.mux.RLock()
 	defer s.mux.RUnlock()
-	_, v, ok := s.tree.LongestPrefix(string(k))
+	prefix, v, ok := s.tree.LongestPrefix(string(k))
 	if !ok {
-		return nil, store.KeyNotFoundError(k)
+		return nil, nil, store.KeyNotFoundError(k)
 	}
-	return v.([]byte), nil
+	return []byte(prefix), v.([]byte), nil
 }

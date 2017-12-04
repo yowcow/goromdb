@@ -67,8 +67,8 @@ func (s Server) HandleConn(conn net.Conn) {
 			s.logger.Printf("server failed parsing a line: %s", err)
 		} else {
 			for _, k := range keys {
-				if v, _ := s.store.Get(k); v != nil {
-					s.protocol.Reply(conn, k, v)
+				if key, v, _ := s.store.Get(k); v != nil {
+					s.protocol.Reply(conn, key, v)
 				}
 			}
 		}

@@ -71,11 +71,11 @@ func (s TestStore) Load(file string) error {
 	return nil
 }
 
-func (s TestStore) Get(key []byte) ([]byte, error) {
+func (s TestStore) Get(key []byte) ([]byte, []byte, error) {
 	if v, ok := s.data[string(key)]; ok {
-		return []byte(v), nil
+		return key, []byte(v), nil
 	}
-	return nil, store.KeyNotFoundError(key)
+	return nil, nil, store.KeyNotFoundError(key)
 }
 
 func TestHandleConn(t *testing.T) {

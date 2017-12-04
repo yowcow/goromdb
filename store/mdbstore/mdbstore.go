@@ -34,18 +34,18 @@ func (s Store) Load(file string) error {
 }
 
 // Get returns a value from backend store after deserializing it into usable value
-func (s Store) Get(key []byte) ([]byte, error) {
-	val, err := s.proxy.Get(key)
+func (s Store) Get(key []byte) ([]byte, []byte, error) {
+	_, val, err := s.proxy.Get(key)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	r := bytes.NewReader(val)
 	_, v, _, err := Deserialize(r)
 	if err != nil {
 		s.logger.Print("failed deserializing a value for key '", string(key), "' with error: ", err)
-		return nil, store.KeyNotFoundError(key)
+		return nil, nil, store.KeyNotFoundError(key)
 	}
-	return v, nil
+	return key, v, nil
 }
 
 // Serialize serializes given key and value into MemcacheDB format binary, and writes to writer

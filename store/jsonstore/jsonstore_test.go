@@ -50,24 +50,42 @@ func TestGet(t *testing.T) {
 	_ = s.Load("valid.json")
 
 	type Case struct {
-		input, expected []byte
-		subtest         string
+		input       []byte
+		expectedKey []byte
+		expectedVal []byte
+		expectError bool
+		subtest     string
 	}
 	cases := []Case{
-		{[]byte("foo"), nil, "non-existing key"},
-		{[]byte("hoge"), []byte("hogehoge"), "existing key: hoge"},
-		{[]byte("fuga"), []byte("fugafuga"), "existing key: fuga"},
+		{
+			[]byte("foo"),
+			nil,
+			nil,
+			true,
+			"non-existing key",
+		},
+		{
+			[]byte("hoge"),
+			[]byte("hoge"),
+			[]byte("hogehoge"),
+			false,
+			"existing key: hoge",
+		},
+		{
+			[]byte("fuga"),
+			[]byte("fuga"),
+			[]byte("fugafuga"),
+			false,
+			"existing key: fuga",
+		},
 	}
 
 	for _, c := range cases {
 		t.Run(c.subtest, func(t *testing.T) {
-			actual, err := s.Get(c.input)
-
-			if c.expected == nil {
-				assert.NotNil(t, err)
-			} else {
-				assert.Equal(t, string(actual), string(c.expected))
-			}
+			key, val, err := s.Get(c.input)
+			assert.Equal(t, c.expectError, err != nil)
+			assert.Equal(t, c.expectedKey, key)
+			assert.Equal(t, c.expectedVal, val)
 		})
 	}
 }
