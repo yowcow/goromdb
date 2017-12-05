@@ -78,10 +78,20 @@ func (h *Handler) Load(file string) error {
 
 func (h Handler) buildTree() *radix.Tree {
 	tree := radix.New()
-	for _, key := range h.storage.AllKeys() {
-		tree.Insert(string(key), true)
+
+	c, err := h.storage.Cursor()
+	if err != nil {
+		h.logger.Printf("radixhandler failed creating a tree: %s", err.Error())
+		return tree
 	}
-	return tree
+
+	for {
+		k, _, err := c.Next()
+		if err != nil {
+			return tree
+		}
+		tree.Insert(string(k), true)
+	}
 }
 
 func (h Handler) Get(key []byte) ([]byte, []byte, error) {
