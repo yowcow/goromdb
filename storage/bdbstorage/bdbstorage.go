@@ -1,6 +1,8 @@
 package bdbstorage
 
 import (
+	"fmt"
+
 	"github.com/ajiyoshi-vg/goberkeleydb/bdb"
 	"github.com/yowcow/goromdb/storage"
 )
@@ -59,6 +61,26 @@ func (s *Storage) Get(key []byte) ([]byte, error) {
 	return nil, storage.KeyNotFoundError(key)
 }
 
-func (s Storage) AllKeys() [][]byte {
-	return nil
+func (s Storage) Cursor() (storage.Cursor, error) {
+	if s.db == nil {
+		return nil, fmt.Errorf("no bdb handle in storage")
+	}
+
+	cur, err := s.db.NewCursor(bdb.NoTxn, 0)
+	if err != nil {
+		return nil, err
+	}
+	return &Cursor{cur}, nil
+}
+
+type Cursor struct {
+	cur *bdb.Cursor
+}
+
+func (c Cursor) Next() ([]byte, []byte, error) {
+	return c.cur.Next()
+}
+
+func (c Cursor) Close() error {
+	return c.cur.Close()
 }

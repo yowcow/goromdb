@@ -90,3 +90,34 @@ func TestGet(t *testing.T) {
 		})
 	}
 }
+
+func TestCursor(t *testing.T) {
+	s := New()
+
+	_, err := s.Cursor()
+
+	assert.NotNil(t, err)
+
+	s.Load(sampleDBFile)
+	c, err := s.Cursor()
+
+	assert.Nil(t, err)
+
+	keys := make([][]byte, 0)
+	for {
+		k, _, err := c.Next()
+		if err != nil {
+			break
+		}
+		keys = append(keys, k)
+	}
+
+	assert.Nil(t, c.Close())
+
+	assert.Equal(t, 5, len(keys))
+	assert.Contains(t, keys, []byte("hoge"))
+	assert.Contains(t, keys, []byte("fuga"))
+	assert.Contains(t, keys, []byte("foo"))
+	assert.Contains(t, keys, []byte("bar"))
+	assert.Contains(t, keys, []byte("buz"))
+}

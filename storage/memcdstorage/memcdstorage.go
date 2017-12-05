@@ -36,8 +36,8 @@ func (s Storage) Get(key []byte) ([]byte, error) {
 	return v, nil
 }
 
-func (s Storage) AllKeys() [][]byte {
-	return s.proxy.AllKeys()
+func (s Storage) Cursor() (storage.Cursor, error) {
+	return s.proxy.Cursor()
 }
 
 // Serialize serializes given key and value into MemcacheDB format binary, and writes to writer

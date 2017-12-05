@@ -7,7 +7,12 @@ import (
 type Storage interface {
 	Get([]byte) ([]byte, error)
 	Load(string) error
-	AllKeys() [][]byte
+	Cursor() (Cursor, error)
+}
+
+type Cursor interface {
+	Next() ([]byte, []byte, error)
+	Close() error
 }
 
 func KeyNotFoundError(key []byte) error {
