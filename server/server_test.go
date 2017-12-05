@@ -75,6 +75,13 @@ func (s TestStorage) Get(key []byte) ([]byte, error) {
 	return nil, storage.KeyNotFoundError(key)
 }
 
+func (s TestStorage) AllKeys() [][]byte {
+	return [][]byte{
+		[]byte("foo"),
+		[]byte("bar"),
+	}
+}
+
 func TestHandleConn(t *testing.T) {
 	dir := testutil.CreateTmpDir()
 	defer os.RemoveAll(dir)

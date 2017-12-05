@@ -12,10 +12,10 @@ import (
 const _Zero uint8 = 0
 
 type Storage struct {
-	proxy storage.IndexableStorage
+	proxy storage.Storage
 }
 
-func New(proxy storage.IndexableStorage) *Storage {
+func New(proxy storage.Storage) *Storage {
 	return &Storage{proxy}
 }
 

@@ -12,12 +12,12 @@ import (
 
 type Handler struct {
 	tree    *radix.Tree
-	storage storage.IndexableStorage
+	storage storage.Storage
 	mux     *sync.RWMutex
 	logger  *log.Logger
 }
 
-func New(stg storage.IndexableStorage, logger *log.Logger) handler.Handler {
+func New(stg storage.Storage, logger *log.Logger) handler.Handler {
 	return &Handler{
 		radix.New(),
 		stg,

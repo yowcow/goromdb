@@ -7,10 +7,6 @@ import (
 type Storage interface {
 	Get([]byte) ([]byte, error)
 	Load(string) error
-}
-
-type IndexableStorage interface {
-	Storage
 	AllKeys() [][]byte
 }
 
