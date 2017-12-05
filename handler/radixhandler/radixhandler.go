@@ -84,6 +84,7 @@ func (h Handler) buildTree() *radix.Tree {
 		h.logger.Printf("radixhandler failed creating a tree: %s", err.Error())
 		return tree
 	}
+	defer c.Close()
 
 	count := 0
 	for {
