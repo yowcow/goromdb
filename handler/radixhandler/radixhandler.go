@@ -85,12 +85,15 @@ func (h Handler) buildTree() *radix.Tree {
 		return tree
 	}
 
+	count := 0
 	for {
 		k, _, err := c.Next()
 		if err != nil {
+			h.logger.Printf("radixhandler successfully created a tree with %d keys", count)
 			return tree
 		}
 		tree.Insert(string(k), true)
+		count++
 	}
 }
 
