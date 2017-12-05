@@ -7,9 +7,9 @@ import (
 	"log"
 	"os"
 
-	"github.com/yowcow/goromdb/gateway"
-	"github.com/yowcow/goromdb/gateway/radixgateway"
-	"github.com/yowcow/goromdb/gateway/simplegateway"
+	"github.com/yowcow/goromdb/handler"
+	"github.com/yowcow/goromdb/handler/radixhandler"
+	"github.com/yowcow/goromdb/handler/simplehandler"
 	"github.com/yowcow/goromdb/loader"
 	"github.com/yowcow/goromdb/protocol"
 	"github.com/yowcow/goromdb/protocol/memcachedprotocol"
@@ -26,7 +26,7 @@ var Version string
 func main() {
 	var addr string
 	var protoBackend string
-	var gatewayBackend string
+	var handlerBackend string
 	var storageBackend string
 	var file string
 	var gzipped bool
@@ -36,8 +36,8 @@ func main() {
 
 	flag.StringVar(&addr, "addr", ":11211", "address to bind to")
 	flag.StringVar(&protoBackend, "proto", "memcached", "protocol: memcached")
-	flag.StringVar(&gatewayBackend, "gateway", "simple", "gateway: simple, radix")
-	flag.StringVar(&storageBackend, "storage", "json", "storage: json, bdb, bdb-memcachedb")
+	flag.StringVar(&handlerBackend, "handler", "simple", "handler: simple, radix")
+	flag.StringVar(&storageBackend, "storage", "json", "storage: json, bdb, memcachedb-bdb")
 	flag.StringVar(&file, "file", "/tmp/goromdb", "data file to be loaded into store")
 	flag.BoolVar(&gzipped, "gzipped", false, "whether or not loading file is gzipped")
 	flag.StringVar(&basedir, "basedir", "", "base directory to store loaded data file")
@@ -71,23 +71,23 @@ func main() {
 		panic(err)
 	}
 
-	ldr, err := loader.New(basedir, "data.db")
+	l, err := loader.New(basedir, "data.db")
 	if err != nil {
 		panic(err)
 	}
 
-	gw, err := createGateway(gatewayBackend, filein, ldr, stg, logger)
+	h, err := createHandler(handlerBackend, stg, logger)
 	if err != nil {
 		panic(err)
 	}
-	done := gw.Start()
+	done := h.Start(filein, l)
 
 	logger.Printf(
-		"booting goromdb (address: %s, protocol: %s, gateway: %s, storage: %s, file: %s)",
-		addr, protoBackend, gatewayBackend, storageBackend, file,
+		"booting goromdb (address: %s, protocol: %s, handler: %s, storage: %s, file: %s)",
+		addr, protoBackend, handlerBackend, storageBackend, file,
 	)
 
-	svr := server.New("tcp", addr, proto, gw, logger)
+	svr := server.New("tcp", addr, proto, h, logger)
 	err = svr.Start()
 	if err != nil {
 		logger.Printf("failed booting goromdb: %s", err.Error())
@@ -98,20 +98,18 @@ func main() {
 
 }
 
-func createGateway(
-	gatewayBackend string,
-	filein <-chan string,
-	ldr *loader.Loader,
+func createHandler(
+	handlerBackend string,
 	stg storage.IndexableStorage,
 	logger *log.Logger,
-) (gateway.Gateway, error) {
-	switch gatewayBackend {
+) (handler.Handler, error) {
+	switch handlerBackend {
 	case "simple":
-		return simplegateway.New(filein, ldr, stg, logger), nil
+		return simplehandler.New(stg, logger), nil
 	case "radix":
-		return radixgateway.New(filein, ldr, stg, logger), nil
+		return radixhandler.New(stg, logger), nil
 	default:
-		return nil, fmt.Errorf("don't know how to handle gateway '%s'", gatewayBackend)
+		return nil, fmt.Errorf("don't know how to handle handler '%s'", handlerBackend)
 	}
 }
 
@@ -121,7 +119,7 @@ func createStorage(storageBackend string, gzipped bool) (storage.IndexableStorag
 		return jsonstorage.New(gzipped), nil
 	case "bdb":
 		return bdbstorage.New(), nil
-	case "bdb-memcachedb":
+	case "memcachedb-bdb":
 		p := bdbstorage.New()
 		return memcdstorage.New(p), nil
 	default:

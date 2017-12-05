@@ -1,4 +1,4 @@
-package simplegateway
+package simplehandler
 
 import (
 	"bytes"
@@ -16,38 +16,26 @@ import (
 var sampleDataFile = "../../storage/jsonstorage/valid.json"
 
 func TestNew(t *testing.T) {
-	dir := testutil.CreateTmpDir()
-	defer os.RemoveAll(dir)
-
-	filein := make(chan string)
-	ldr, _ := loader.New(dir, "test.data")
-
 	stg := jsonstorage.New(false)
 
 	logbuf := new(bytes.Buffer)
 	logger := log.New(logbuf, "", 0)
 
-	_ = New(filein, ldr, stg, logger)
+	_ = New(stg, logger)
 }
 
 func TestLoadAndGet(t *testing.T) {
-	dir := testutil.CreateTmpDir()
-	defer os.RemoveAll(dir)
-
-	filein := make(chan string)
-	ldr, _ := loader.New(dir, "test.data")
-
 	stg := jsonstorage.New(false)
 
 	logbuf := new(bytes.Buffer)
 	logger := log.New(logbuf, "", 0)
 
-	str := New(filein, ldr, stg, logger)
-	err := str.Load(sampleDataFile)
+	h := New(stg, logger)
+	err := h.Load(sampleDataFile)
 
 	assert.Nil(t, err)
 
-	key, val, err := str.Get([]byte("hoge"))
+	key, val, err := h.Get([]byte("hoge"))
 
 	assert.Nil(t, err)
 	assert.Equal(t, []byte("hoge"), key)
@@ -58,16 +46,15 @@ func TestStart(t *testing.T) {
 	dir := testutil.CreateTmpDir()
 	defer os.RemoveAll(dir)
 
-	filein := make(chan string)
-	ldr, _ := loader.New(dir, "test.data")
-
 	stg := jsonstorage.New(false)
 
 	logbuf := new(bytes.Buffer)
 	logger := log.New(logbuf, "", 0)
 
-	str := New(filein, ldr, stg, logger)
-	done := str.Start()
+	h := New(stg, logger)
+	filein := make(chan string)
+	l, _ := loader.New(dir, "test.data")
+	done := h.Start(filein, l)
 
 	file := filepath.Join(dir, "dropin.db")
 	for i := 0; i < 10; i++ {
@@ -75,7 +62,7 @@ func TestStart(t *testing.T) {
 		filein <- file
 	}
 
-	key, val, err := str.Get([]byte("hoge"))
+	key, val, err := h.Get([]byte("hoge"))
 
 	assert.Nil(t, err)
 	assert.Equal(t, []byte("hoge"), key)

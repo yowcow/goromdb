@@ -1,4 +1,4 @@
-package radixgateway
+package radixhandler
 
 import (
 	"bytes"
@@ -16,34 +16,22 @@ import (
 var sampleDataFile = "../../data/store/sample-data.json"
 
 func TestNew(t *testing.T) {
-	dir := testutil.CreateTmpDir()
-	defer os.RemoveAll(dir)
-
-	filein := make(chan string)
-	ldr, _ := loader.New(dir, "radix.data")
-
 	stg := jsonstorage.New(false)
 
 	logbuf := new(bytes.Buffer)
 	logger := log.New(logbuf, "", 0)
 
-	New(filein, ldr, stg, logger)
+	New(stg, logger)
 }
 
 func TestLoadAndGet(t *testing.T) {
-	dir := testutil.CreateTmpDir()
-	defer os.RemoveAll(dir)
-
-	filein := make(chan string)
-	ldr, _ := loader.New(dir, "radix.data")
-
 	stg := jsonstorage.New(false)
 
 	logbuf := new(bytes.Buffer)
 	logger := log.New(logbuf, "", 0)
 
-	str := New(filein, ldr, stg, logger)
-	err := str.Load(sampleDataFile)
+	h := New(stg, logger)
+	err := h.Load(sampleDataFile)
 
 	assert.Nil(t, err)
 
@@ -80,7 +68,7 @@ func TestLoadAndGet(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.subtest, func(t *testing.T) {
-			k, v, err := str.Get(c.input)
+			k, v, err := h.Get(c.input)
 			assert.Equal(t, c.expectError, err != nil)
 			assert.Equal(t, c.expectedKey, k)
 			assert.Equal(t, c.expectedVal, v)
@@ -92,16 +80,15 @@ func TestStart(t *testing.T) {
 	dir := testutil.CreateTmpDir()
 	defer os.RemoveAll(dir)
 
-	filein := make(chan string)
-	ldr, _ := loader.New(dir, "radix.data")
-
 	stg := jsonstorage.New(false)
 
 	logbuf := new(bytes.Buffer)
 	logger := log.New(logbuf, "", 0)
 
-	str := New(filein, ldr, stg, logger)
-	done := str.Start()
+	h := New(stg, logger)
+	filein := make(chan string)
+	l, _ := loader.New(dir, "radix.data")
+	done := h.Start(filein, l)
 
 	file := filepath.Join(dir, "dropin.db")
 	for i := 0; i < 10; i++ {
@@ -109,7 +96,7 @@ func TestStart(t *testing.T) {
 		filein <- file
 	}
 
-	key, val, err := str.Get([]byte("hogefuga"))
+	key, val, err := h.Get([]byte("hogefuga"))
 
 	assert.Nil(t, err)
 	assert.Equal(t, []byte("hoge"), key)

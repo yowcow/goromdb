@@ -12,8 +12,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/yowcow/goromdb/gateway/simplegateway"
-	"github.com/yowcow/goromdb/loader"
+	"github.com/yowcow/goromdb/handler/simplehandler"
 	"github.com/yowcow/goromdb/protocol"
 	"github.com/yowcow/goromdb/storage"
 	"github.com/yowcow/goromdb/testutil"
@@ -84,11 +83,10 @@ func TestHandleConn(t *testing.T) {
 	logger := log.New(logbuf, "", 0)
 	p := createTestProtocol()
 	stg := createTestStorage(logger)
-	ldr, _ := loader.New(dir, "test.data")
-	gw := simplegateway.New(nil, ldr, stg, logger)
+	h := simplehandler.New(stg, logger)
 
 	sock := filepath.Join(dir, "test.sock")
-	svr := New("unix", sock, p, gw, logger)
+	svr := New("unix", sock, p, h, logger)
 
 	done := make(chan bool)
 	ln, err := net.Listen("unix", sock)

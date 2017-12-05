@@ -6,7 +6,7 @@ import (
 	"log"
 	"net"
 
-	"github.com/yowcow/goromdb/gateway"
+	"github.com/yowcow/goromdb/handler"
 	"github.com/yowcow/goromdb/protocol"
 )
 
@@ -15,17 +15,17 @@ type Server struct {
 	network  string
 	addr     string
 	protocol protocol.Protocol
-	gateway  gateway.Gateway
+	handler  handler.Handler
 	logger   *log.Logger
 }
 
 // New creates a new server
-func New(network, addr string, p protocol.Protocol, gw gateway.Gateway, logger *log.Logger) *Server {
+func New(network, addr string, p protocol.Protocol, h handler.Handler, logger *log.Logger) *Server {
 	return &Server{
 		network,
 		addr,
 		p,
-		gw,
+		h,
 		logger,
 	}
 }
@@ -67,7 +67,7 @@ func (s Server) HandleConn(conn net.Conn) {
 			s.logger.Printf("server failed parsing a line: %s", err)
 		} else {
 			for _, k := range keys {
-				if key, v, _ := s.gateway.Get(k); v != nil {
+				if key, v, _ := s.handler.Get(k); v != nil {
 					s.protocol.Reply(conn, key, v)
 				}
 			}
