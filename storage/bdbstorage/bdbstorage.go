@@ -21,13 +21,12 @@ func (s *Storage) Load(file string, mux *sync.RWMutex) error {
 	if err != nil {
 		return err
 	}
-	oldDB := s.db
 
 	// Lock, switch, and unlock
 	mux.Lock()
+	defer mux.Unlock()
+	oldDB := s.db
 	s.db = db
-	mux.Unlock()
-
 	if oldDB != nil {
 		oldDB.Close(0)
 		oldDB = nil
