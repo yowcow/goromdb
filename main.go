@@ -83,8 +83,8 @@ func main() {
 	done := h.Start(filein, l)
 
 	logger.Printf(
-		"booting goromdb (address: %s, protocol: %s, handler: %s, storage: %s, file: %s)",
-		addr, protoBackend, handlerBackend, storageBackend, file,
+		"booting goromdb (PID: %d, address: %s, protocol: %s, handler: %s, storage: %s, file: %s)",
+		os.Getpid(), addr, protoBackend, handlerBackend, storageBackend, file,
 	)
 
 	svr := server.New("tcp", addr, proto, h, logger)
