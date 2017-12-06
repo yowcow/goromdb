@@ -9,6 +9,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -64,7 +65,7 @@ func createTestStorage(logger *log.Logger) storage.Storage {
 	return &TestStorage{data, logger}
 }
 
-func (s TestStorage) Load(file string) error {
+func (s TestStorage) Load(file string, mux *sync.RWMutex) error {
 	return nil
 }
 

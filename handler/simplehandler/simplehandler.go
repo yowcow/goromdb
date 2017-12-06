@@ -63,9 +63,7 @@ func (h Handler) start(filein <-chan string, l *loader.Loader, done chan<- bool)
 }
 
 func (h Handler) Load(file string) error {
-	h.mux.Lock()
-	defer h.mux.Unlock()
-	return h.storage.Load(file)
+	return h.storage.Load(file, h.mux)
 }
 
 func (h Handler) Get(key []byte) ([]byte, []byte, error) {

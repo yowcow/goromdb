@@ -66,13 +66,15 @@ func (h *Handler) start(filein <-chan string, l *loader.Loader, done chan<- bool
 }
 
 func (h *Handler) Load(file string) error {
-	h.mux.Lock()
-	err := h.storage.Load(file)
-	h.mux.Unlock()
+	err := h.storage.Load(file, h.mux)
 	if err != nil {
 		return err
 	}
-	h.tree = h.buildTree()
+	// Build, lock, switch, and unlock
+	newtree := h.buildTree()
+	h.mux.Lock()
+	defer h.mux.Unlock()
+	h.tree = newtree
 	return nil
 }
 

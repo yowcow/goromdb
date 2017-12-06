@@ -2,11 +2,12 @@ package storage
 
 import (
 	"fmt"
+	"sync"
 )
 
 type Storage interface {
 	Get([]byte) ([]byte, error)
-	Load(string) error
+	Load(string, *sync.RWMutex) error
 	Cursor() (Cursor, error)
 }
 

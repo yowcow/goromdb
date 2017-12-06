@@ -2,6 +2,7 @@ package bdbstorage
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/ajiyoshi-vg/goberkeleydb/bdb"
 	"github.com/yowcow/goromdb/storage"
@@ -15,13 +16,18 @@ func New() *Storage {
 	return &Storage{nil}
 }
 
-func (s *Storage) Load(file string) error {
+func (s *Storage) Load(file string, mux *sync.RWMutex) error {
 	db, err := openBDB(file)
 	if err != nil {
 		return err
 	}
 	oldDB := s.db
+
+	// Lock, switch, and unlock
+	mux.Lock()
 	s.db = db
+	mux.Unlock()
+
 	if oldDB != nil {
 		oldDB.Close(0)
 		oldDB = nil

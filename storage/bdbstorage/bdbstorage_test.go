@@ -1,6 +1,7 @@
 package bdbstorage
 
 import (
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -36,10 +37,11 @@ func TestLoad(t *testing.T) {
 		},
 	}
 
+	mux := new(sync.RWMutex)
 	for _, c := range cases {
 		t.Run(c.subtest, func(t *testing.T) {
 			s := New()
-			err := s.Load(c.input)
+			err := s.Load(c.input, mux)
 			assert.Equal(t, c.expectError, err != nil)
 		})
 	}
@@ -47,7 +49,8 @@ func TestLoad(t *testing.T) {
 
 func TestGet(t *testing.T) {
 	s := New()
-	s.Load(sampleDBFile)
+	mux := new(sync.RWMutex)
+	s.Load(sampleDBFile, mux)
 
 	type Case struct {
 		input       []byte
@@ -86,7 +89,8 @@ func TestCursor(t *testing.T) {
 
 	assert.NotNil(t, err)
 
-	s.Load(sampleDBFile)
+	mux := new(sync.RWMutex)
+	s.Load(sampleDBFile, mux)
 	c, err := s.Cursor()
 
 	assert.Nil(t, err)

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sync"
 
 	"github.com/yowcow/goromdb/storage"
 )
@@ -24,7 +25,7 @@ func New(gzipped bool) *Storage {
 	}
 }
 
-func (s *Storage) Load(file string) error {
+func (s *Storage) Load(file string, mux *sync.RWMutex) error {
 	fi, err := os.Open(file)
 	if err != nil {
 		return err
@@ -41,7 +42,11 @@ func (s *Storage) Load(file string) error {
 	if err := decoder.Decode(&data); err != nil {
 		return err
 	}
+
+	// Lock, switch, and unlock
+	mux.Lock()
 	s.data = data
+	mux.Unlock()
 	return nil
 }
 
