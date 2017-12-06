@@ -12,12 +12,12 @@ import (
 
 type Handler struct {
 	tree    *radix.Tree
-	storage storage.IndexableStorage
+	storage storage.Storage
 	mux     *sync.RWMutex
 	logger  *log.Logger
 }
 
-func New(stg storage.IndexableStorage, logger *log.Logger) handler.Handler {
+func New(stg storage.Storage, logger *log.Logger) handler.Handler {
 	return &Handler{
 		radix.New(),
 		stg,
@@ -66,22 +66,38 @@ func (h *Handler) start(filein <-chan string, l *loader.Loader, done chan<- bool
 }
 
 func (h *Handler) Load(file string) error {
-	h.mux.Lock()
-	err := h.storage.Load(file)
-	h.mux.Unlock()
+	err := h.storage.Load(file, h.mux)
 	if err != nil {
 		return err
 	}
-	h.tree = h.buildTree()
+	// Build, lock, switch, and unlock
+	newtree := h.buildTree()
+	h.mux.Lock()
+	defer h.mux.Unlock()
+	h.tree = newtree
 	return nil
 }
 
 func (h Handler) buildTree() *radix.Tree {
 	tree := radix.New()
-	for _, key := range h.storage.AllKeys() {
-		tree.Insert(string(key), true)
+
+	c, err := h.storage.Cursor()
+	if err != nil {
+		h.logger.Printf("radixhandler failed creating a tree: %s", err.Error())
+		return tree
 	}
-	return tree
+	defer c.Close()
+
+	count := 0
+	for {
+		k, _, err := c.Next()
+		if err != nil {
+			h.logger.Printf("radixhandler successfully created a tree with %d keys", count)
+			return tree
+		}
+		tree.Insert(string(k), true)
+		count++
+	}
 }
 
 func (h Handler) Get(key []byte) ([]byte, []byte, error) {

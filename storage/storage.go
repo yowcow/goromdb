@@ -2,16 +2,18 @@ package storage
 
 import (
 	"fmt"
+	"sync"
 )
 
 type Storage interface {
 	Get([]byte) ([]byte, error)
-	Load(string) error
+	Load(string, *sync.RWMutex) error
+	Cursor() (Cursor, error)
 }
 
-type IndexableStorage interface {
-	Storage
-	AllKeys() [][]byte
+type Cursor interface {
+	Next() ([]byte, []byte, error)
+	Close() error
 }
 
 func KeyNotFoundError(key []byte) error {

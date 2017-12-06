@@ -3,8 +3,10 @@ package jsonstorage
 import (
 	"compress/gzip"
 	"encoding/json"
+	"fmt"
 	"io"
 	"os"
+	"sync"
 
 	"github.com/yowcow/goromdb/storage"
 )
@@ -23,7 +25,7 @@ func New(gzipped bool) *Storage {
 	}
 }
 
-func (s *Storage) Load(file string) error {
+func (s *Storage) Load(file string, mux *sync.RWMutex) error {
 	fi, err := os.Open(file)
 	if err != nil {
 		return err
@@ -40,7 +42,11 @@ func (s *Storage) Load(file string) error {
 	if err := decoder.Decode(&data); err != nil {
 		return err
 	}
+
+	// Lock, switch, and unlock
+	mux.Lock()
 	s.data = data
+	mux.Unlock()
 	return nil
 }
 
@@ -63,12 +69,37 @@ func (s Storage) Get(key []byte) ([]byte, error) {
 	return nil, storage.KeyNotFoundError(key)
 }
 
-func (s Storage) AllKeys() [][]byte {
-	keys := make([][]byte, len(s.data))
+func (s Storage) Cursor() (storage.Cursor, error) {
+	size := len(s.data)
+	if size == 0 {
+		return nil, fmt.Errorf("no data in storage")
+	}
+	keys := make([]string, size)
 	i := 0
 	for k, _ := range s.data {
-		keys[i] = []byte(k)
+		keys[i] = k
 		i++
 	}
-	return keys
+	return &Cursor{s.data, keys, size, 0}, nil
+}
+
+type Cursor struct {
+	data     Data
+	keys     []string
+	size     int
+	curindex int
+}
+
+func (c *Cursor) Next() ([]byte, []byte, error) {
+	if c.curindex >= c.size {
+		return nil, nil, fmt.Errorf("end of items")
+	}
+	key := c.keys[c.curindex]
+	val := c.data[key]
+	c.curindex++
+	return []byte(key), []byte(val), nil
+}
+
+func (c Cursor) Close() error {
+	return nil
 }

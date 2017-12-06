@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"sync"
 
 	"github.com/yowcow/goromdb/storage"
 )
@@ -12,15 +13,15 @@ import (
 const _Zero uint8 = 0
 
 type Storage struct {
-	proxy storage.IndexableStorage
+	proxy storage.Storage
 }
 
-func New(proxy storage.IndexableStorage) *Storage {
+func New(proxy storage.Storage) *Storage {
 	return &Storage{proxy}
 }
 
-func (s Storage) Load(file string) error {
-	return s.proxy.Load(file)
+func (s Storage) Load(file string, mux *sync.RWMutex) error {
+	return s.proxy.Load(file, mux)
 }
 
 func (s Storage) Get(key []byte) ([]byte, error) {
@@ -36,8 +37,8 @@ func (s Storage) Get(key []byte) ([]byte, error) {
 	return v, nil
 }
 
-func (s Storage) AllKeys() [][]byte {
-	return s.proxy.AllKeys()
+func (s Storage) Cursor() (storage.Cursor, error) {
+	return s.proxy.Cursor()
 }
 
 // Serialize serializes given key and value into MemcacheDB format binary, and writes to writer

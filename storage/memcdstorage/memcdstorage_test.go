@@ -1,6 +1,7 @@
 package memcdstorage
 
 import (
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -38,11 +39,12 @@ func TestLoad(t *testing.T) {
 		},
 	}
 
+	mux := new(sync.RWMutex)
 	for _, c := range cases {
 		t.Run(c.subtest, func(t *testing.T) {
 			p := bdbstorage.New()
 			s := New(p)
-			err := s.Load(c.input)
+			err := s.Load(c.input, mux)
 			assert.Equal(t, c.expectError, err != nil)
 		})
 	}
@@ -51,7 +53,8 @@ func TestLoad(t *testing.T) {
 func TestGet(t *testing.T) {
 	p := bdbstorage.New()
 	s := New(p)
-	s.Load(sampleDBFile)
+	mux := new(sync.RWMutex)
+	s.Load(sampleDBFile, mux)
 
 	type Case struct {
 		input       []byte

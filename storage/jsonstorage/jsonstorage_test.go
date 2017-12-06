@@ -1,11 +1,13 @@
 package jsonstorage
 
 import (
-	"reflect"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
+
+var sampleDataFile = "../../data/store/sample-data.json"
 
 func TestNew(t *testing.T) {
 	s := New(false)
@@ -49,10 +51,11 @@ func TestLoad(t *testing.T) {
 		},
 	}
 
+	mux := new(sync.RWMutex)
 	for _, c := range cases {
 		t.Run(c.subtest, func(t *testing.T) {
 			s := New(c.gzipped)
-			err := s.Load(c.input)
+			err := s.Load(c.input, mux)
 			assert.Equal(t, c.expectError, err != nil)
 		})
 	}
@@ -60,7 +63,8 @@ func TestLoad(t *testing.T) {
 
 func TestGet(t *testing.T) {
 	s := New(false)
-	s.Load("valid.json")
+	mux := new(sync.RWMutex)
+	s.Load(sampleDataFile, mux)
 
 	type Case struct {
 		input       []byte
@@ -78,7 +82,7 @@ func TestGet(t *testing.T) {
 		{
 			[]byte("hoge"),
 			false,
-			[]byte("hogehoge"),
+			[]byte("hoge!"),
 			"existing key succeeds",
 		},
 	}
@@ -92,15 +96,33 @@ func TestGet(t *testing.T) {
 	}
 }
 
-func TestAllKeys(t *testing.T) {
+func TestCursor(t *testing.T) {
 	s := New(false)
-	res1 := s.AllKeys()
+	_, err := s.Cursor()
 
-	assert.True(t, reflect.DeepEqual([][]byte{}, res1))
+	assert.NotNil(t, err)
 
-	s.Load("valid.json")
-	res2 := s.AllKeys()
+	mux := new(sync.RWMutex)
+	s.Load(sampleDataFile, mux)
+	c, err := s.Cursor()
 
-	assert.Contains(t, res2, []byte("hoge"))
-	assert.Contains(t, res2, []byte("fuga"))
+	assert.Nil(t, err)
+
+	keys := make([][]byte, 0)
+	for {
+		k, _, err := c.Next()
+		if err != nil {
+			break
+		}
+		keys = append(keys, k)
+	}
+
+	assert.Nil(t, c.Close())
+
+	assert.Equal(t, 5, len(keys))
+	assert.Contains(t, keys, []byte("hoge"))
+	assert.Contains(t, keys, []byte("fuga"))
+	assert.Contains(t, keys, []byte("foo"))
+	assert.Contains(t, keys, []byte("bar"))
+	assert.Contains(t, keys, []byte("buz"))
 }

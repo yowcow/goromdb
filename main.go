@@ -83,8 +83,8 @@ func main() {
 	done := h.Start(filein, l)
 
 	logger.Printf(
-		"booting goromdb (address: %s, protocol: %s, handler: %s, storage: %s, file: %s)",
-		addr, protoBackend, handlerBackend, storageBackend, file,
+		"booting goromdb (PID: %d, address: %s, protocol: %s, handler: %s, storage: %s, file: %s)",
+		os.Getpid(), addr, protoBackend, handlerBackend, storageBackend, file,
 	)
 
 	svr := server.New("tcp", addr, proto, h, logger)
@@ -95,12 +95,11 @@ func main() {
 	}
 	cancel()
 	<-done
-
 }
 
 func createHandler(
 	handlerBackend string,
-	stg storage.IndexableStorage,
+	stg storage.Storage,
 	logger *log.Logger,
 ) (handler.Handler, error) {
 	switch handlerBackend {
@@ -113,7 +112,7 @@ func createHandler(
 	}
 }
 
-func createStorage(storageBackend string, gzipped bool) (storage.IndexableStorage, error) {
+func createStorage(storageBackend string, gzipped bool) (storage.Storage, error) {
 	switch storageBackend {
 	case "json":
 		return jsonstorage.New(gzipped), nil

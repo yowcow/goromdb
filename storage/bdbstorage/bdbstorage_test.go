@@ -1,6 +1,7 @@
 package bdbstorage
 
 import (
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -36,10 +37,11 @@ func TestLoad(t *testing.T) {
 		},
 	}
 
+	mux := new(sync.RWMutex)
 	for _, c := range cases {
 		t.Run(c.subtest, func(t *testing.T) {
 			s := New()
-			err := s.Load(c.input)
+			err := s.Load(c.input, mux)
 			assert.Equal(t, c.expectError, err != nil)
 		})
 	}
@@ -47,7 +49,8 @@ func TestLoad(t *testing.T) {
 
 func TestGet(t *testing.T) {
 	s := New()
-	s.Load(sampleDBFile)
+	mux := new(sync.RWMutex)
+	s.Load(sampleDBFile, mux)
 
 	type Case struct {
 		input       []byte
@@ -63,22 +66,10 @@ func TestGet(t *testing.T) {
 			"existing key returns expected val",
 		},
 		{
-			[]byte("hoge"),
-			[]byte("hoge!"),
-			false,
-			"existing key again returns expected val",
-		},
-		{
 			[]byte("hogehoge"),
 			nil,
 			true,
 			"non-existing key returns error",
-		},
-		{
-			[]byte("hogehoge"),
-			nil,
-			true,
-			"non-existing key again returns error",
 		},
 	}
 
@@ -89,4 +80,38 @@ func TestGet(t *testing.T) {
 			assert.Equal(t, c.expected, v)
 		})
 	}
+}
+
+func TestCursor(t *testing.T) {
+	s := New()
+
+	_, err := s.Cursor()
+
+	assert.NotNil(t, err)
+
+	mux := new(sync.RWMutex)
+	s.Load(sampleDBFile, mux)
+	c, err := s.Cursor()
+
+	assert.Nil(t, err)
+
+	expected := [][]byte{
+		[]byte("hoge"),
+		[]byte("fuga"),
+		[]byte("foo"),
+		[]byte("bar"),
+		[]byte("buz"),
+	}
+	count := 0
+	for {
+		k, _, err := c.Next()
+		if err != nil {
+			break
+		}
+		assert.Contains(t, expected, k)
+		count++
+	}
+
+	assert.Nil(t, c.Close())
+	assert.Equal(t, len(expected), count)
 }

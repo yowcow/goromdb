@@ -9,6 +9,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -64,7 +65,7 @@ func createTestStorage(logger *log.Logger) storage.Storage {
 	return &TestStorage{data, logger}
 }
 
-func (s TestStorage) Load(file string) error {
+func (s TestStorage) Load(file string, mux *sync.RWMutex) error {
 	return nil
 }
 
@@ -73,6 +74,10 @@ func (s TestStorage) Get(key []byte) ([]byte, error) {
 		return []byte(v), nil
 	}
 	return nil, storage.KeyNotFoundError(key)
+}
+
+func (s TestStorage) Cursor() (storage.Cursor, error) {
+	return nil, fmt.Errorf("cursor not supported")
 }
 
 func TestHandleConn(t *testing.T) {
