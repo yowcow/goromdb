@@ -63,22 +63,10 @@ func TestGet(t *testing.T) {
 			"existing key returns expected val",
 		},
 		{
-			[]byte("hoge"),
-			[]byte("hoge!"),
-			false,
-			"existing key again returns expected val",
-		},
-		{
 			[]byte("hogehoge"),
 			nil,
 			true,
 			"non-existing key returns error",
-		},
-		{
-			[]byte("hogehoge"),
-			nil,
-			true,
-			"non-existing key again returns error",
 		},
 	}
 
@@ -103,21 +91,23 @@ func TestCursor(t *testing.T) {
 
 	assert.Nil(t, err)
 
-	keys := make([][]byte, 0)
+	expected := [][]byte{
+		[]byte("hoge"),
+		[]byte("fuga"),
+		[]byte("foo"),
+		[]byte("bar"),
+		[]byte("buz"),
+	}
+	count := 0
 	for {
 		k, _, err := c.Next()
 		if err != nil {
 			break
 		}
-		keys = append(keys, k)
+		assert.Contains(t, expected, k)
+		count++
 	}
 
 	assert.Nil(t, c.Close())
-
-	assert.Equal(t, 5, len(keys))
-	assert.Contains(t, keys, []byte("hoge"))
-	assert.Contains(t, keys, []byte("fuga"))
-	assert.Contains(t, keys, []byte("foo"))
-	assert.Contains(t, keys, []byte("bar"))
-	assert.Contains(t, keys, []byte("buz"))
+	assert.Equal(t, len(expected), count)
 }
