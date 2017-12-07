@@ -96,33 +96,33 @@ func TestGet(t *testing.T) {
 	}
 }
 
-func TestCursor(t *testing.T) {
+func TestIterate(t *testing.T) {
 	s := New(false)
-	_, err := s.Cursor()
+
+	data := make(map[string]string)
+	expected := [][]byte{
+		[]byte("hoge"),
+		[]byte("fuga"),
+		[]byte("foo"),
+		[]byte("bar"),
+		[]byte("buz"),
+	}
+	iterFunc := func(k, v []byte) error {
+		assert.Contains(t, expected, k)
+		data[string(k)] = string(v)
+		return nil
+	}
+
+	err := s.Iterate(iterFunc)
 
 	assert.NotNil(t, err)
+	assert.Equal(t, 0, len(data))
 
 	mux := new(sync.RWMutex)
 	s.Load(sampleDataFile, mux)
-	c, err := s.Cursor()
+
+	err = s.Iterate(iterFunc)
 
 	assert.Nil(t, err)
-
-	keys := make([][]byte, 0)
-	for {
-		k, _, err := c.Next()
-		if err != nil {
-			break
-		}
-		keys = append(keys, k)
-	}
-
-	assert.Nil(t, c.Close())
-
-	assert.Equal(t, 5, len(keys))
-	assert.Contains(t, keys, []byte("hoge"))
-	assert.Contains(t, keys, []byte("fuga"))
-	assert.Contains(t, keys, []byte("foo"))
-	assert.Contains(t, keys, []byte("bar"))
-	assert.Contains(t, keys, []byte("buz"))
+	assert.Equal(t, 5, len(data))
 }

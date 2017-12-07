@@ -28,7 +28,9 @@ func (s *Storage) Load(file string, mux *sync.RWMutex) error {
 	oldDB := s.db
 	s.db = db
 	if oldDB != nil {
-		oldDB.Close(0)
+		if err = oldDB.Close(0); err != nil {
+			return err
+		}
 		oldDB = nil
 	}
 	return nil
@@ -49,26 +51,21 @@ func (s *Storage) Get(key []byte) ([]byte, error) {
 	return nil, storage.KeyNotFoundError(key)
 }
 
-func (s Storage) Cursor() (storage.Cursor, error) {
+func (s Storage) Iterate(fn storage.IterationFunc) error {
 	if s.db == nil {
-		return nil, fmt.Errorf("no bdb handle in storage")
+		return fmt.Errorf("no bdb handle in storage")
 	}
 
 	cur, err := s.db.NewCursor(bdb.NoTxn, 0)
 	if err != nil {
-		return nil, err
+		return nil
 	}
-	return &Cursor{cur}, nil
-}
 
-type Cursor struct {
-	cur *bdb.Cursor
-}
+	for k, v, err := cur.First(); err == nil; k, v, err = cur.Next() {
+		if err = fn(k, v); err != nil {
+			return err
+		}
+	}
 
-func (c Cursor) Next() ([]byte, []byte, error) {
-	return c.cur.Next()
-}
-
-func (c Cursor) Close() error {
-	return c.cur.Close()
+	return cur.Close()
 }

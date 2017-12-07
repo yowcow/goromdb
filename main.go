@@ -16,6 +16,7 @@ import (
 	"github.com/yowcow/goromdb/server"
 	"github.com/yowcow/goromdb/storage"
 	"github.com/yowcow/goromdb/storage/bdbstorage"
+	"github.com/yowcow/goromdb/storage/boltstorage"
 	"github.com/yowcow/goromdb/storage/jsonstorage"
 	"github.com/yowcow/goromdb/storage/memcdstorage"
 	"github.com/yowcow/goromdb/watcher"
@@ -30,6 +31,7 @@ func main() {
 	var storageBackend string
 	var file string
 	var gzipped bool
+	var bucket string
 	var basedir string
 	var help bool
 	var version bool
@@ -37,9 +39,10 @@ func main() {
 	flag.StringVar(&addr, "addr", ":11211", "address to bind to")
 	flag.StringVar(&protoBackend, "proto", "memcached", "protocol: memcached")
 	flag.StringVar(&handlerBackend, "handler", "simple", "handler: simple, radix")
-	flag.StringVar(&storageBackend, "storage", "json", "storage: json, bdb, memcachedb-bdb")
+	flag.StringVar(&storageBackend, "storage", "json", "storage: json, bdb, boltdb, memcachedb-bdb")
 	flag.StringVar(&file, "file", "/tmp/goromdb", "data file to be loaded into store")
 	flag.BoolVar(&gzipped, "gzipped", false, "whether or not loading file is gzipped")
+	flag.StringVar(&bucket, "bucket", "default", "bucket name (for boltdb)")
 	flag.StringVar(&basedir, "basedir", "", "base directory to store loaded data file")
 	flag.BoolVar(&help, "help", false, "print help")
 	flag.BoolVar(&version, "version", false, "print version")
@@ -66,7 +69,7 @@ func main() {
 	wcr := watcher.New(file, 5000, logger)
 	filein := wcr.Start(ctx)
 
-	stg, err := createStorage(storageBackend, gzipped)
+	stg, err := createStorage(storageBackend, gzipped, bucket)
 	if err != nil {
 		panic(err)
 	}
@@ -112,12 +115,14 @@ func createHandler(
 	}
 }
 
-func createStorage(storageBackend string, gzipped bool) (storage.Storage, error) {
+func createStorage(storageBackend string, gzipped bool, bucket string) (storage.Storage, error) {
 	switch storageBackend {
 	case "json":
 		return jsonstorage.New(gzipped), nil
 	case "bdb":
 		return bdbstorage.New(), nil
+	case "boltdb":
+		return boltstorage.New(bucket), nil
 	case "memcachedb-bdb":
 		p := bdbstorage.New()
 		return memcdstorage.New(p), nil
