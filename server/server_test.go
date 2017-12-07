@@ -76,8 +76,8 @@ func (s TestStorage) Get(key []byte) ([]byte, error) {
 	return nil, storage.KeyNotFoundError(key)
 }
 
-func (s TestStorage) Cursor() (storage.Cursor, error) {
-	return nil, fmt.Errorf("cursor not supported")
+func (s TestStorage) Iterate(fn storage.IteratorFunc) error {
+	return fmt.Errorf("iteration not supported")
 }
 
 func TestHandleConn(t *testing.T) {

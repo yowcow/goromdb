@@ -69,37 +69,14 @@ func (s Storage) Get(key []byte) ([]byte, error) {
 	return nil, storage.KeyNotFoundError(key)
 }
 
-func (s Storage) Cursor() (storage.Cursor, error) {
-	size := len(s.data)
-	if size == 0 {
-		return nil, fmt.Errorf("no data in storage")
+func (s Storage) Iterate(fn storage.IteratorFunc) error {
+	if len(s.data) == 0 {
+		return fmt.Errorf("no data in storage")
 	}
-	keys := make([]string, size)
-	i := 0
-	for k, _ := range s.data {
-		keys[i] = k
-		i++
+	for k, v := range s.data {
+		if err := fn([]byte(k), []byte(v)); err != nil {
+			return err
+		}
 	}
-	return &Cursor{s.data, keys, size, 0}, nil
-}
-
-type Cursor struct {
-	data     Data
-	keys     []string
-	size     int
-	curindex int
-}
-
-func (c *Cursor) Next() ([]byte, []byte, error) {
-	if c.curindex >= c.size {
-		return nil, nil, fmt.Errorf("end of items")
-	}
-	key := c.keys[c.curindex]
-	val := c.data[key]
-	c.curindex++
-	return []byte(key), []byte(val), nil
-}
-
-func (c Cursor) Close() error {
 	return nil
 }

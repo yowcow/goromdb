@@ -80,24 +80,20 @@ func (h *Handler) Load(file string) error {
 
 func (h Handler) buildTree() *radix.Tree {
 	tree := radix.New()
+	count := 0
+	fn := func(k, v []byte) error {
+		tree.Insert(string(k), true)
+		count++
+		return nil
+	}
 
-	c, err := h.storage.Cursor()
-	if err != nil {
+	if err := h.storage.Iterate(fn); err != nil {
 		h.logger.Printf("radixhandler failed creating a tree: %s", err.Error())
 		return tree
 	}
-	defer c.Close()
 
-	count := 0
-	for {
-		k, _, err := c.Next()
-		if err != nil {
-			h.logger.Printf("radixhandler successfully created a tree with %d keys", count)
-			return tree
-		}
-		tree.Insert(string(k), true)
-		count++
-	}
+	h.logger.Printf("radixhandler successfully created a tree with %d keys", count)
+	return tree
 }
 
 func (h Handler) Get(key []byte) ([]byte, []byte, error) {
