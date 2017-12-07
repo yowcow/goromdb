@@ -90,6 +90,8 @@ func (l *Loader) DropIn(file string) (string, error) {
 
 // CleanUp cleans previously loaded data file, and returns bool
 func (l Loader) CleanUp() bool {
+	defer syscall.Sync()
+
 	if l.previndex < 0 {
 		return false
 	}
