@@ -70,11 +70,13 @@ func (h *Handler) Load(file string) error {
 	if err != nil {
 		return err
 	}
-	// Build, lock, switch, and unlock
+	h.mux.RLock()
 	newtree := h.buildTree()
+	h.mux.RUnlock()
+
 	h.mux.Lock()
-	defer h.mux.Unlock()
 	h.tree = newtree
+	h.mux.Unlock()
 	return nil
 }
 
