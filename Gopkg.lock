@@ -14,6 +14,12 @@
   revision = "1fca145dffbcaa8fe914309b1ec0cfc67500fe61"
 
 [[projects]]
+  name = "github.com/boltdb/bolt"
+  packages = ["."]
+  revision = "2f1ce7a837dcb8da3ec595b1dac9d0632f0f99e8"
+  version = "v1.3.1"
+
+[[projects]]
   branch = "master"
   name = "github.com/bradfitz/gomemcache"
   packages = ["memcache"]
@@ -37,9 +43,15 @@
   revision = "69483b4bd14f5845b5a1e55bca19e954e827f1d0"
   version = "v1.1.4"
 
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/sys"
+  packages = ["unix"]
+  revision = "9167dbfd0f8e88b731dd88cbf73a270701a37bb4"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "b99785694365934cfea13bd0b2b3bcf08d0ced57965ab3ecb177020be1971e71"
+  inputs-digest = "f135c884913b9edf2f5969b8dd3b00bcb06a22ba3402f944f37dbb4cb0b6928d"
   solver-name = "gps-cdcl"
   solver-version = 1
