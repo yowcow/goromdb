@@ -48,7 +48,7 @@ func (s Storage) Get(key []byte) ([]byte, error) {
 	return val, nil
 }
 
-func (s Storage) Iterate(fn storage.IteratorFunc) error {
+func (s Storage) Iterate(fn storage.IterationFunc) error {
 	if s.db == nil {
 		return fmt.Errorf("no boltdb handle in storage")
 	}

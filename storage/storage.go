@@ -5,12 +5,12 @@ import (
 	"sync"
 )
 
-type IteratorFunc func([]byte, []byte) error
+type IterationFunc func([]byte, []byte) error
 
 type Storage interface {
 	Get([]byte) ([]byte, error)
 	Load(string, *sync.RWMutex) error
-	Iterate(IteratorFunc) error
+	Iterate(IterationFunc) error
 }
 
 func KeyNotFoundError(key []byte) error {

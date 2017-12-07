@@ -37,7 +37,7 @@ func (s Storage) Get(key []byte) ([]byte, error) {
 	return v, nil
 }
 
-func (s Storage) Iterate(fn storage.IteratorFunc) error {
+func (s Storage) Iterate(fn storage.IterationFunc) error {
 	return s.proxy.Iterate(fn)
 }
 

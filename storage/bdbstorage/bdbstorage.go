@@ -51,7 +51,7 @@ func (s *Storage) Get(key []byte) ([]byte, error) {
 	return nil, storage.KeyNotFoundError(key)
 }
 
-func (s Storage) Iterate(fn storage.IteratorFunc) error {
+func (s Storage) Iterate(fn storage.IterationFunc) error {
 	if s.db == nil {
 		return fmt.Errorf("no bdb handle in storage")
 	}

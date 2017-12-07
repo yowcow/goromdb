@@ -69,7 +69,7 @@ func (s Storage) Get(key []byte) ([]byte, error) {
 	return nil, storage.KeyNotFoundError(key)
 }
 
-func (s Storage) Iterate(fn storage.IteratorFunc) error {
+func (s Storage) Iterate(fn storage.IterationFunc) error {
 	if len(s.data) == 0 {
 		return fmt.Errorf("no data in storage")
 	}

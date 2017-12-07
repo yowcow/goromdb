@@ -76,7 +76,7 @@ func (s TestStorage) Get(key []byte) ([]byte, error) {
 	return nil, storage.KeyNotFoundError(key)
 }
 
-func (s TestStorage) Iterate(fn storage.IteratorFunc) error {
+func (s TestStorage) Iterate(fn storage.IterationFunc) error {
 	return fmt.Errorf("iteration not supported")
 }
 
