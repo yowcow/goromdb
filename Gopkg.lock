@@ -5,7 +5,7 @@
   branch = "master"
   name = "github.com/ajiyoshi-vg/goberkeleydb"
   packages = ["bdb"]
-  revision = "0eb4ff0e9ca69c476310ec21eb89bb73ed201978"
+  revision = "94781d9018db078396807d7e084ab7a17fcc0210"
 
 [[projects]]
   branch = "master"
