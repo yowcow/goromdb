@@ -61,6 +61,30 @@ func TestLoad(t *testing.T) {
 	}
 }
 
+func TestLoadAndIterate(t *testing.T) {
+	s := New(false)
+	mux := new(sync.RWMutex)
+
+	data := make(map[string]string)
+	expected := [][]byte{
+		[]byte("hoge"),
+		[]byte("fuga"),
+		[]byte("foo"),
+		[]byte("bar"),
+		[]byte("buz"),
+	}
+	iterFunc := func(k, v []byte) error {
+		assert.Contains(t, expected, k)
+		data[string(k)] = string(v)
+		return nil
+	}
+
+	err := s.LoadAndIterate(sampleDataFile, iterFunc, mux)
+
+	assert.Nil(t, err)
+	assert.Equal(t, 5, len(data))
+}
+
 func TestGet(t *testing.T) {
 	s := New(false)
 	mux := new(sync.RWMutex)
@@ -94,35 +118,4 @@ func TestGet(t *testing.T) {
 			assert.Equal(t, c.expectedVal, v)
 		})
 	}
-}
-
-func TestIterate(t *testing.T) {
-	s := New(false)
-
-	data := make(map[string]string)
-	expected := [][]byte{
-		[]byte("hoge"),
-		[]byte("fuga"),
-		[]byte("foo"),
-		[]byte("bar"),
-		[]byte("buz"),
-	}
-	iterFunc := func(k, v []byte) error {
-		assert.Contains(t, expected, k)
-		data[string(k)] = string(v)
-		return nil
-	}
-
-	err := s.Iterate(iterFunc)
-
-	assert.NotNil(t, err)
-	assert.Equal(t, 0, len(data))
-
-	mux := new(sync.RWMutex)
-	s.Load(sampleDataFile, mux)
-
-	err = s.Iterate(iterFunc)
-
-	assert.Nil(t, err)
-	assert.Equal(t, 5, len(data))
 }

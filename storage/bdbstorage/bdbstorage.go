@@ -1,7 +1,6 @@
 package bdbstorage
 
 import (
-	"fmt"
 	"sync"
 
 	"github.com/ajiyoshi-vg/goberkeleydb/bdb"
@@ -22,17 +21,33 @@ func (s *Storage) Load(file string, mux *sync.RWMutex) error {
 		return err
 	}
 
-	// Lock, switch, and unlock
 	mux.Lock()
 	defer mux.Unlock()
-	oldDB := s.db
-	s.db = db
-	if oldDB != nil {
-		if err = oldDB.Close(0); err != nil {
-			return err
-		}
-		oldDB = nil
+
+	if s.db != nil {
+		s.db.Close(0)
 	}
+	s.db = db
+	return nil
+}
+
+func (s *Storage) LoadAndIterate(file string, fn storage.IterationFunc, mux *sync.RWMutex) error {
+	db, err := openBDB(file)
+	if err != nil {
+		return err
+	}
+	err = iterate(db, fn)
+	if err != nil {
+		return err
+	}
+
+	mux.Lock()
+	defer mux.Unlock()
+
+	if s.db != nil {
+		s.db.Close(0)
+	}
+	s.db = db
 	return nil
 }
 
@@ -51,21 +66,17 @@ func (s *Storage) Get(key []byte) ([]byte, error) {
 	return nil, storage.KeyNotFoundError(key)
 }
 
-func (s Storage) Iterate(fn storage.IterationFunc) error {
-	if s.db == nil {
-		return fmt.Errorf("no bdb handle in storage")
-	}
-
-	cur, err := s.db.NewCursor(bdb.NoTxn, 0)
+func iterate(db *bdb.BerkeleyDB, fn storage.IterationFunc) error {
+	cur, err := db.NewCursor(bdb.NoTxn, 0)
 	if err != nil {
-		return nil
+		return err
 	}
+	defer cur.Close()
 
 	for k, v, err := cur.First(); err == nil; k, v, err = cur.Next() {
 		if err = fn(k, v); err != nil {
 			return err
 		}
 	}
-
-	return cur.Close()
+	return nil
 }

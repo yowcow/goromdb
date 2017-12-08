@@ -69,15 +69,15 @@ func (s TestStorage) Load(file string, mux *sync.RWMutex) error {
 	return nil
 }
 
+func (s TestStorage) LoadAndIterate(file string, fn storage.IterationFunc, mux *sync.RWMutex) error {
+	return fmt.Errorf("iteration not supported")
+}
+
 func (s TestStorage) Get(key []byte) ([]byte, error) {
 	if v, ok := s.data[string(key)]; ok {
 		return []byte(v), nil
 	}
 	return nil, storage.KeyNotFoundError(key)
-}
-
-func (s TestStorage) Iterate(fn storage.IterationFunc) error {
-	return fmt.Errorf("iteration not supported")
 }
 
 func TestHandleConn(t *testing.T) {

@@ -66,36 +66,25 @@ func (h *Handler) start(filein <-chan string, l *loader.Loader, done chan<- bool
 }
 
 func (h *Handler) Load(file string) error {
-	err := h.storage.Load(file, h.mux)
-	if err != nil {
-		return err
-	}
-	h.mux.RLock()
-	newtree := h.buildTree()
-	h.mux.RUnlock()
-
-	h.mux.Lock()
-	h.tree = newtree
-	h.mux.Unlock()
-	return nil
-}
-
-func (h Handler) buildTree() *radix.Tree {
-	tree := radix.New()
+	newtree := radix.New()
 	count := 0
 	fn := func(k, v []byte) error {
-		tree.Insert(string(k), true)
+		newtree.Insert(string(k), true)
 		count++
 		return nil
 	}
 
-	if err := h.storage.Iterate(fn); err != nil {
-		h.logger.Printf("radixhandler failed creating a tree: %s", err.Error())
-		return tree
+	err := h.storage.LoadAndIterate(file, fn, h.mux)
+	if err != nil {
+		return err
 	}
+	h.logger.Printf("radixhandler successfully loaded and created a tree with %d keys", count)
 
-	h.logger.Printf("radixhandler successfully created a tree with %d keys", count)
-	return tree
+	h.mux.Lock()
+	defer h.mux.Unlock()
+
+	h.tree = newtree
+	return nil
 }
 
 func (h Handler) Get(key []byte) ([]byte, []byte, error) {
