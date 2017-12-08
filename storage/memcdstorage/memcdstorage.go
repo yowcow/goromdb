@@ -24,6 +24,10 @@ func (s Storage) Load(file string, mux *sync.RWMutex) error {
 	return s.proxy.Load(file, mux)
 }
 
+func (s Storage) LoadAndIterate(file string, fn storage.IterationFunc, mux *sync.RWMutex) error {
+	return s.proxy.LoadAndIterate(file, fn, mux)
+}
+
 func (s Storage) Get(key []byte) ([]byte, error) {
 	val, err := s.proxy.Get(key)
 	if err != nil {
@@ -35,10 +39,6 @@ func (s Storage) Get(key []byte) ([]byte, error) {
 		return nil, storage.KeyNotFoundError(key)
 	}
 	return v, nil
-}
-
-func (s Storage) Iterate(fn storage.IterationFunc) error {
-	return s.proxy.Iterate(fn)
 }
 
 // Serialize serializes given key and value into MemcacheDB format binary, and writes to writer

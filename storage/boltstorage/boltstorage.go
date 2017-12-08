@@ -1,7 +1,6 @@
 package boltstorage
 
 import (
-	"fmt"
 	"sync"
 
 	"github.com/boltdb/bolt"
@@ -18,21 +17,38 @@ func New(b string) *Storage {
 }
 
 func (s *Storage) Load(file string, mux *sync.RWMutex) error {
-	db, err := bolt.Open(file, 0644, &bolt.Options{ReadOnly: true})
+	db, err := openDB(file)
 	if err != nil {
 		return err
 	}
 
 	mux.Lock()
 	defer mux.Unlock()
-	oldDB := s.db
-	s.db = db
-	if oldDB != nil {
-		if err = oldDB.Close(); err != nil {
-			return err
-		}
-		oldDB = nil
+
+	if s.db != nil {
+		s.db.Close()
 	}
+	s.db = db
+	return nil
+}
+
+func (s *Storage) LoadAndIterate(file string, fn storage.IterationFunc, mux *sync.RWMutex) error {
+	db, err := openDB(file)
+	if err != nil {
+		return err
+	}
+	err = iterate(db, s.bucket, fn)
+	if err != nil {
+		return err
+	}
+
+	mux.Lock()
+	defer mux.Unlock()
+
+	if s.db != nil {
+		s.db.Close()
+	}
+	s.db = db
 	return nil
 }
 
@@ -48,12 +64,13 @@ func (s Storage) Get(key []byte) ([]byte, error) {
 	return val, nil
 }
 
-func (s Storage) Iterate(fn storage.IterationFunc) error {
-	if s.db == nil {
-		return fmt.Errorf("no boltdb handle in storage")
-	}
-	return s.db.View(func(tx *bolt.Tx) error {
-		cursor := tx.Bucket(s.bucket).Cursor()
+func openDB(file string) (*bolt.DB, error) {
+	return bolt.Open(file, 0644, &bolt.Options{ReadOnly: true})
+}
+
+func iterate(db *bolt.DB, bucket []byte, fn storage.IterationFunc) error {
+	return db.View(func(tx *bolt.Tx) error {
+		cursor := tx.Bucket(bucket).Cursor()
 		for k, v := cursor.First(); k != nil; k, v = cursor.Next() {
 			if err := fn(k, v); err != nil {
 				return err

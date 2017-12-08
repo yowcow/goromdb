@@ -3,7 +3,6 @@ package jsonstorage
 import (
 	"compress/gzip"
 	"encoding/json"
-	"fmt"
 	"io"
 	"os"
 	"sync"
@@ -26,28 +25,55 @@ func New(gzipped bool) *Storage {
 }
 
 func (s *Storage) Load(file string, mux *sync.RWMutex) error {
-	fi, err := os.Open(file)
+	data, err := s.openFile(file)
 	if err != nil {
-		return err
-	}
-	defer fi.Close()
-
-	r, err := s.newReader(fi)
-	if err != nil {
-		return err
-	}
-
-	decoder := json.NewDecoder(r)
-	var data Data
-	if err := decoder.Decode(&data); err != nil {
 		return err
 	}
 
 	// Lock, switch, and unlock
 	mux.Lock()
+	defer mux.Unlock()
+
 	s.data = data
-	mux.Unlock()
 	return nil
+}
+
+func (s *Storage) LoadAndIterate(file string, fn storage.IterationFunc, mux *sync.RWMutex) error {
+	data, err := s.openFile(file)
+	if err != nil {
+		return err
+	}
+	err = iterate(data, fn)
+	if err != nil {
+		return err
+	}
+
+	// Lock, switch, and unlock
+	mux.Lock()
+	defer mux.Unlock()
+
+	s.data = data
+	return nil
+}
+
+func (s Storage) openFile(file string) (Data, error) {
+	fi, err := os.Open(file)
+	if err != nil {
+		return nil, err
+	}
+	defer fi.Close()
+
+	r, err := s.newReader(fi)
+	if err != nil {
+		return nil, err
+	}
+
+	decoder := json.NewDecoder(r)
+	var data Data
+	if err := decoder.Decode(&data); err != nil {
+		return nil, err
+	}
+	return data, nil
 }
 
 func (s Storage) newReader(rdr io.Reader) (io.Reader, error) {
@@ -69,11 +95,8 @@ func (s Storage) Get(key []byte) ([]byte, error) {
 	return nil, storage.KeyNotFoundError(key)
 }
 
-func (s Storage) Iterate(fn storage.IterationFunc) error {
-	if len(s.data) == 0 {
-		return fmt.Errorf("no data in storage")
-	}
-	for k, v := range s.data {
+func iterate(data Data, fn storage.IterationFunc) error {
+	for k, v := range data {
 		if err := fn([]byte(k), []byte(v)); err != nil {
 			return err
 		}

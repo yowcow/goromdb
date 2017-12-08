@@ -10,7 +10,7 @@ type IterationFunc func([]byte, []byte) error
 type Storage interface {
 	Get([]byte) ([]byte, error)
 	Load(string, *sync.RWMutex) error
-	Iterate(IterationFunc) error
+	LoadAndIterate(string, IterationFunc, *sync.RWMutex) error
 }
 
 func KeyNotFoundError(key []byte) error {
