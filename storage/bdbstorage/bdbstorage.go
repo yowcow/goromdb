@@ -9,14 +9,14 @@ import (
 )
 
 type Storage struct {
-	mux *sync.Mutex
 	db  *atomic.Value
+	mux *sync.Mutex
 }
 
 func New() *Storage {
 	return &Storage{
-		new(sync.Mutex),
 		new(atomic.Value),
+		new(sync.Mutex),
 	}
 }
 
