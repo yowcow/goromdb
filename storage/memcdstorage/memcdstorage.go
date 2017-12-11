@@ -11,22 +11,27 @@ import (
 
 const _Zero uint8 = 0
 
+// Storage represents a memcachedb storage
 type Storage struct {
 	proxy storage.Storage
 }
 
+// New creates and returns a storage
 func New(proxy storage.Storage) *Storage {
 	return &Storage{proxy}
 }
 
+// Load loads data into storage
 func (s Storage) Load(file string) error {
 	return s.proxy.Load(file)
 }
 
+// LoadAndIterate loads data into storage, and iterate through newly loaded data
 func (s Storage) LoadAndIterate(file string, fn storage.IterationFunc) error {
 	return s.proxy.LoadAndIterate(file, fn)
 }
 
+// Get finds a given key in storage, deserialize its value into memcachedb format, and returns
 func (s Storage) Get(key []byte) ([]byte, error) {
 	val, err := s.proxy.Get(key)
 	if err != nil {

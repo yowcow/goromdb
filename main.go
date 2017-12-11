@@ -22,6 +22,7 @@ import (
 	"github.com/yowcow/goromdb/watcher"
 )
 
+// Version to be embedded
 var Version string
 
 func main() {

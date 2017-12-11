@@ -8,12 +8,14 @@ import (
 	"github.com/yowcow/goromdb/storage"
 )
 
+// Storage represents a BoltDB storage
 type Storage struct {
 	db     *atomic.Value
 	bucket []byte
 	mux    *sync.RWMutex
 }
 
+// New creates and returns a storage
 func New(b string) *Storage {
 	return &Storage{
 		new(atomic.Value),
@@ -22,6 +24,7 @@ func New(b string) *Storage {
 	}
 }
 
+// Load loads a new db handle into storage, and closes old db handle if exists
 func (s *Storage) Load(file string) error {
 	newDB, err := openDB(file)
 	if err != nil {
@@ -39,6 +42,7 @@ func (s *Storage) Load(file string) error {
 	return nil
 }
 
+// LoadAndIterate loads a new db handle, iterate through newly loaded db, and closes old db handle if exists
 func (s *Storage) LoadAndIterate(file string, fn storage.IterationFunc) error {
 	newDB, err := openDB(file)
 	if err != nil {
@@ -71,6 +75,7 @@ func openDB(file string) (*bolt.DB, error) {
 	return bolt.Open(file, 0644, &bolt.Options{ReadOnly: true})
 }
 
+// Get finds a given key in db, and returns its value
 func (s Storage) Get(key []byte) ([]byte, error) {
 	s.mux.RLock()
 	defer s.mux.RUnlock()

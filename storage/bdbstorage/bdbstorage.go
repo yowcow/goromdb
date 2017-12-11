@@ -8,11 +8,13 @@ import (
 	"github.com/yowcow/goromdb/storage"
 )
 
+// Storage represents a BDB storage
 type Storage struct {
 	db  *atomic.Value
 	mux *sync.Mutex
 }
 
+// New creates and returns a storage
 func New() *Storage {
 	return &Storage{
 		new(atomic.Value),
@@ -20,6 +22,7 @@ func New() *Storage {
 	}
 }
 
+// Load loads a new db handle into storage, and closes old db handle if exists
 func (s *Storage) Load(file string) error {
 	newDB, err := openBDB(file)
 	if err != nil {
@@ -37,6 +40,7 @@ func (s *Storage) Load(file string) error {
 	return nil
 }
 
+// LoadAndIterate loads new db handle into storage, iterate through newly loaded db handle, and closes old db handle if exists
 func (s *Storage) LoadAndIterate(file string, fn storage.IterationFunc) error {
 	newDB, err := openBDB(file)
 	if err != nil {
@@ -69,6 +73,7 @@ func openBDB(file string) (*bdb.BerkeleyDB, error) {
 	return bdb.OpenBDB(bdb.NoEnv, bdb.NoTxn, file, nil, bdb.BTree, bdb.DbReadOnly, 0)
 }
 
+// Get finds a given key in db, and returns its value
 func (s Storage) Get(key []byte) ([]byte, error) {
 	s.mux.Lock()
 	defer s.mux.Unlock()

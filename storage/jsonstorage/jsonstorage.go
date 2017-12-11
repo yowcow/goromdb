@@ -11,14 +11,17 @@ import (
 	"github.com/yowcow/goromdb/storage"
 )
 
+// Data represents a data
 type Data map[string]string
 
+// Storage represents a JSON storage
 type Storage struct {
 	gzipped bool
 	data    *atomic.Value
 	mux     *sync.RWMutex
 }
 
+// New creates and returns a storage
 func New(gzipped bool) *Storage {
 	return &Storage{
 		gzipped,
@@ -27,6 +30,7 @@ func New(gzipped bool) *Storage {
 	}
 }
 
+// Load loads data into storage
 func (s *Storage) Load(file string) error {
 	data, err := s.openFile(file)
 	if err != nil {
@@ -41,6 +45,7 @@ func (s *Storage) Load(file string) error {
 	return nil
 }
 
+// LoadAndIterate loads data into storage, and iterate through newly loaded data
 func (s *Storage) LoadAndIterate(file string, fn storage.IterationFunc) error {
 	data, err := s.openFile(file)
 	if err != nil {
@@ -90,6 +95,7 @@ func (s Storage) newReader(rdr io.Reader) (io.Reader, error) {
 	return rdr, nil
 }
 
+// Get finds a given key in data, and returns its value
 func (s Storage) Get(key []byte) ([]byte, error) {
 	s.mux.RLock()
 	defer s.mux.RUnlock()
