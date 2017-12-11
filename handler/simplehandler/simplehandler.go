@@ -2,7 +2,6 @@ package simplehandler
 
 import (
 	"log"
-	"sync"
 
 	"github.com/yowcow/goromdb/handler"
 	"github.com/yowcow/goromdb/loader"
@@ -11,14 +10,12 @@ import (
 
 type Handler struct {
 	storage storage.Storage
-	mux     *sync.RWMutex
 	logger  *log.Logger
 }
 
 func New(stg storage.Storage, logger *log.Logger) handler.Handler {
 	return &Handler{
 		stg,
-		new(sync.RWMutex),
 		logger,
 	}
 }
@@ -63,12 +60,10 @@ func (h Handler) start(filein <-chan string, l *loader.Loader, done chan<- bool)
 }
 
 func (h Handler) Load(file string) error {
-	return h.storage.Load(file, h.mux)
+	return h.storage.Load(file)
 }
 
 func (h Handler) Get(key []byte) ([]byte, []byte, error) {
-	h.mux.RLock()
-	defer h.mux.RUnlock()
 	val, err := h.storage.Get(key)
 	if err != nil {
 		return nil, nil, err
