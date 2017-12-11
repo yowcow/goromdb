@@ -1,7 +1,6 @@
 package boltstorage
 
 import (
-	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -15,7 +14,6 @@ func TestNew(t *testing.T) {
 
 func TestLoad(t *testing.T) {
 	s := New("goromdb")
-	mux := new(sync.RWMutex)
 
 	type Case struct {
 		input       string
@@ -47,7 +45,7 @@ func TestLoad(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.subtest, func(t *testing.T) {
-			err := s.Load(sampleDBFile, mux)
+			err := s.Load(sampleDBFile)
 			assert.Equal(t, c.expectError, err != nil)
 		})
 	}
@@ -55,7 +53,6 @@ func TestLoad(t *testing.T) {
 
 func TestLoadAndIterate(t *testing.T) {
 	s := New("goromdb")
-	mux := new(sync.RWMutex)
 
 	data := make(map[string]string)
 	expected := [][]byte{
@@ -71,7 +68,7 @@ func TestLoadAndIterate(t *testing.T) {
 		return nil
 	}
 
-	err := s.LoadAndIterate(sampleDBFile, iterFunc, mux)
+	err := s.LoadAndIterate(sampleDBFile, iterFunc)
 
 	assert.Nil(t, err)
 	assert.Equal(t, 5, len(data))
@@ -79,8 +76,12 @@ func TestLoadAndIterate(t *testing.T) {
 
 func TestGet(t *testing.T) {
 	s := New("goromdb")
-	mux := new(sync.RWMutex)
-	s.Load(sampleDBFile, mux)
+	v, err := s.Get([]byte("hoge"))
+
+	assert.Nil(t, v)
+	assert.NotNil(t, err)
+
+	s.Load(sampleDBFile)
 
 	type Case struct {
 		input       []byte

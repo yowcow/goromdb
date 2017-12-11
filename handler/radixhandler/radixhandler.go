@@ -74,7 +74,7 @@ func (h *Handler) Load(file string) error {
 		return nil
 	}
 
-	err := h.storage.LoadAndIterate(file, fn, h.mux)
+	err := h.storage.LoadAndIterate(file, fn)
 	if err != nil {
 		return err
 	}
@@ -89,9 +89,8 @@ func (h *Handler) Load(file string) error {
 
 func (h Handler) Get(key []byte) ([]byte, []byte, error) {
 	h.mux.RLock()
-	defer h.mux.RUnlock()
-
 	prefix, _, ok := h.tree.LongestPrefix(string(key))
+	h.mux.RUnlock()
 	if !ok {
 		return nil, nil, storage.KeyNotFoundError(key)
 	}

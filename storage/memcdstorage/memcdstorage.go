@@ -5,7 +5,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
-	"sync"
 
 	"github.com/yowcow/goromdb/storage"
 )
@@ -20,12 +19,12 @@ func New(proxy storage.Storage) *Storage {
 	return &Storage{proxy}
 }
 
-func (s Storage) Load(file string, mux *sync.RWMutex) error {
-	return s.proxy.Load(file, mux)
+func (s Storage) Load(file string) error {
+	return s.proxy.Load(file)
 }
 
-func (s Storage) LoadAndIterate(file string, fn storage.IterationFunc, mux *sync.RWMutex) error {
-	return s.proxy.LoadAndIterate(file, fn, mux)
+func (s Storage) LoadAndIterate(file string, fn storage.IterationFunc) error {
+	return s.proxy.LoadAndIterate(file, fn)
 }
 
 func (s Storage) Get(key []byte) ([]byte, error) {

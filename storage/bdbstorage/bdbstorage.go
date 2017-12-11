@@ -2,52 +2,66 @@ package bdbstorage
 
 import (
 	"sync"
+	"sync/atomic"
 
 	"github.com/ajiyoshi-vg/goberkeleydb/bdb"
 	"github.com/yowcow/goromdb/storage"
 )
 
 type Storage struct {
-	db *bdb.BerkeleyDB
+	db  *atomic.Value
+	mux *sync.Mutex
 }
 
 func New() *Storage {
-	return &Storage{nil}
+	return &Storage{
+		new(atomic.Value),
+		new(sync.Mutex),
+	}
 }
 
-func (s *Storage) Load(file string, mux *sync.RWMutex) error {
-	db, err := openBDB(file)
+func (s *Storage) Load(file string) error {
+	newDB, err := openBDB(file)
 	if err != nil {
 		return err
 	}
 
-	mux.Lock()
-	defer mux.Unlock()
+	s.mux.Lock()
+	defer s.mux.Unlock()
 
-	if s.db != nil {
-		s.db.Close(0)
+	oldDB := s.getDB()
+	s.db.Store(newDB)
+	if oldDB != nil {
+		oldDB.Close(0)
 	}
-	s.db = db
 	return nil
 }
 
-func (s *Storage) LoadAndIterate(file string, fn storage.IterationFunc, mux *sync.RWMutex) error {
-	db, err := openBDB(file)
+func (s *Storage) LoadAndIterate(file string, fn storage.IterationFunc) error {
+	newDB, err := openBDB(file)
 	if err != nil {
 		return err
 	}
-	err = iterate(db, fn)
+	err = iterate(newDB, fn)
 	if err != nil {
 		return err
 	}
 
-	mux.Lock()
-	defer mux.Unlock()
+	s.mux.Lock()
+	defer s.mux.Unlock()
 
-	if s.db != nil {
-		s.db.Close(0)
+	oldDB := s.getDB()
+	s.db.Store(newDB)
+	if oldDB != nil {
+		oldDB.Close(0)
 	}
-	s.db = db
+	return nil
+}
+
+func (s Storage) getDB() *bdb.BerkeleyDB {
+	if ptr := s.db.Load(); ptr != nil {
+		return ptr.(*bdb.BerkeleyDB)
+	}
 	return nil
 }
 
@@ -55,9 +69,11 @@ func openBDB(file string) (*bdb.BerkeleyDB, error) {
 	return bdb.OpenBDB(bdb.NoEnv, bdb.NoTxn, file, nil, bdb.BTree, bdb.DbReadOnly, 0)
 }
 
-func (s *Storage) Get(key []byte) ([]byte, error) {
-	if s.db != nil {
-		v, err := s.db.Get(bdb.NoTxn, key, 0)
+func (s Storage) Get(key []byte) ([]byte, error) {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+	if db := s.getDB(); db != nil {
+		v, err := db.Get(bdb.NoTxn, key, 0)
 		if err != nil {
 			return nil, storage.KeyNotFoundError(key)
 		}

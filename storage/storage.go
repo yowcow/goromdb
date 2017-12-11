@@ -2,15 +2,14 @@ package storage
 
 import (
 	"fmt"
-	"sync"
 )
 
 type IterationFunc func([]byte, []byte) error
 
 type Storage interface {
 	Get([]byte) ([]byte, error)
-	Load(string, *sync.RWMutex) error
-	LoadAndIterate(string, IterationFunc, *sync.RWMutex) error
+	Load(string) error
+	LoadAndIterate(string, IterationFunc) error
 }
 
 func KeyNotFoundError(key []byte) error {

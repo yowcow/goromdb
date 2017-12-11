@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"sync"
+	"sync/atomic"
 
 	"github.com/yowcow/goromdb/storage"
 )
@@ -14,31 +15,33 @@ type Data map[string]string
 
 type Storage struct {
 	gzipped bool
-	data    Data
+	data    *atomic.Value
+	mux     *sync.RWMutex
 }
 
 func New(gzipped bool) *Storage {
 	return &Storage{
 		gzipped,
-		make(Data),
+		new(atomic.Value),
+		new(sync.RWMutex),
 	}
 }
 
-func (s *Storage) Load(file string, mux *sync.RWMutex) error {
+func (s *Storage) Load(file string) error {
 	data, err := s.openFile(file)
 	if err != nil {
 		return err
 	}
 
 	// Lock, switch, and unlock
-	mux.Lock()
-	defer mux.Unlock()
+	s.mux.Lock()
+	defer s.mux.Unlock()
 
-	s.data = data
+	s.data.Store(data)
 	return nil
 }
 
-func (s *Storage) LoadAndIterate(file string, fn storage.IterationFunc, mux *sync.RWMutex) error {
+func (s *Storage) LoadAndIterate(file string, fn storage.IterationFunc) error {
 	data, err := s.openFile(file)
 	if err != nil {
 		return err
@@ -49,10 +52,10 @@ func (s *Storage) LoadAndIterate(file string, fn storage.IterationFunc, mux *syn
 	}
 
 	// Lock, switch, and unlock
-	mux.Lock()
-	defer mux.Unlock()
+	s.mux.Lock()
+	defer s.mux.Unlock()
 
-	s.data = data
+	s.data.Store(data)
 	return nil
 }
 
@@ -88,8 +91,16 @@ func (s Storage) newReader(rdr io.Reader) (io.Reader, error) {
 }
 
 func (s Storage) Get(key []byte) ([]byte, error) {
+	s.mux.RLock()
+	defer s.mux.RUnlock()
+
+	ptr := s.data.Load()
+	if ptr == nil {
+		return nil, storage.KeyNotFoundError(key)
+	}
+	data := ptr.(Data)
 	k := string(key)
-	if v, ok := s.data[k]; ok {
+	if v, ok := data[k]; ok {
 		return []byte(v), nil
 	}
 	return nil, storage.KeyNotFoundError(key)
