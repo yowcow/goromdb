@@ -2,20 +2,21 @@ package boltstorage
 
 import (
 	"sync"
+	"sync/atomic"
 
 	"github.com/boltdb/bolt"
 	"github.com/yowcow/goromdb/storage"
 )
 
 type Storage struct {
-	db     *bolt.DB
+	db     *atomic.Value
 	bucket []byte
 	mux    *sync.RWMutex
 }
 
 func New(b string) *Storage {
 	return &Storage{
-		nil,
+		new(atomic.Value),
 		[]byte(b),
 		new(sync.RWMutex),
 	}
@@ -30,10 +31,11 @@ func (s *Storage) Load(file string) error {
 	s.mux.Lock()
 	defer s.mux.Unlock()
 
-	if oldDB := s.getDB(); oldDB != nil {
+	oldDB := s.getDB()
+	s.db.Store(newDB)
+	if oldDB != nil {
 		oldDB.Close()
 	}
-	s.db = newDB
 	return nil
 }
 
@@ -50,15 +52,19 @@ func (s *Storage) LoadAndIterate(file string, fn storage.IterationFunc) error {
 	s.mux.Lock()
 	defer s.mux.Unlock()
 
-	if oldDB := s.getDB(); oldDB != nil {
+	oldDB := s.getDB()
+	s.db.Store(newDB)
+	if oldDB != nil {
 		oldDB.Close()
 	}
-	s.db = newDB
 	return nil
 }
 
 func (s Storage) getDB() *bolt.DB {
-	return s.db
+	if ptr := s.db.Load(); ptr != nil {
+		return ptr.(*bolt.DB)
+	}
+	return nil
 }
 
 func openDB(file string) (*bolt.DB, error) {

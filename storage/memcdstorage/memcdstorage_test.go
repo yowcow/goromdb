@@ -51,6 +51,11 @@ func TestLoad(t *testing.T) {
 func TestGet(t *testing.T) {
 	p := bdbstorage.New()
 	s := New(p)
+	v, err := s.Get([]byte("hoge"))
+
+	assert.Nil(t, v)
+	assert.NotNil(t, err)
+
 	s.Load(sampleDBFile)
 
 	type Case struct {

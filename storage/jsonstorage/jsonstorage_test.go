@@ -84,6 +84,11 @@ func TestLoadAndIterate(t *testing.T) {
 
 func TestGet(t *testing.T) {
 	s := New(false)
+	v, err := s.Get([]byte("hoge"))
+
+	assert.Nil(t, v)
+	assert.NotNil(t, err)
+
 	s.Load(sampleDataFile)
 
 	type Case struct {
