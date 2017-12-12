@@ -9,7 +9,7 @@ GOROMDB is a datastore that:
 
 + accepts read-only access
 + talks multiple protocols like memcached and others
-+ handles multiple database backend like JSON, BerkeleyDB, BoltDB, and others
++ handles multiple database backends like JSON, BerkeleyDB, BoltDB, and others
 
 STRUCTURE
 ---------
