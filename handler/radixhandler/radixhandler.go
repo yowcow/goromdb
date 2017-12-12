@@ -10,6 +10,7 @@ import (
 	"github.com/yowcow/goromdb/storage"
 )
 
+// Handler represents a radix handler
 type Handler struct {
 	tree    *radix.Tree
 	storage storage.Storage
@@ -17,6 +18,7 @@ type Handler struct {
 	logger  *log.Logger
 }
 
+// New creates and returns a handler
 func New(stg storage.Storage, logger *log.Logger) handler.Handler {
 	return &Handler{
 		radix.New(),
@@ -26,6 +28,7 @@ func New(stg storage.Storage, logger *log.Logger) handler.Handler {
 	}
 }
 
+// Start starts a handler goroutine
 func (h *Handler) Start(filein <-chan string, l *loader.Loader) <-chan bool {
 	done := make(chan bool)
 	go h.start(filein, l, done)
@@ -65,6 +68,7 @@ func (h *Handler) start(filein <-chan string, l *loader.Loader, done chan<- bool
 	}
 }
 
+// Load loads data into storage, and creates a radix tree
 func (h *Handler) Load(file string) error {
 	newtree := radix.New()
 	count := 0
@@ -87,6 +91,7 @@ func (h *Handler) Load(file string) error {
 	return nil
 }
 
+// Get finds the longest prefix for given key, and finds value by prefix
 func (h Handler) Get(key []byte) ([]byte, []byte, error) {
 	h.mux.RLock()
 	prefix, _, ok := h.tree.LongestPrefix(string(key))

@@ -3,13 +3,30 @@
 GOROMDB
 =======
 
-A single process KVS data store server that talks memcached protocol and serves file-based KVS stores like:
+Yet another single process KVS server implemented over file-based database.
 
-+ JSON file
-+ BerkeleyDB file
-+ MemcacheDB data in BerkeleyDB file
+GOROMDB is a datastore that:
 
-More protocols and data store may be supported.
++ accepts read-only access
++ talks multiple protocols like memcached and others
++ handles multiple database backends like JSON, BerkeleyDB, BoltDB, and others
+
+STRUCTURE
+---------
+
+```
+                     .---------.
+                     | watcher |
+                     '----+----'
+                          |
+        .--------.   .----+----.   .---------.
+TCP --> | server +---+ handler +---+ storage |-.
+        '----+---'   '----+----'   '---------' | <-- Replacable database
+             |            |          '---------'
+       .-----+----.   .---+----.
+       | protocol |   | loader |
+       '----------'   '--------'
+```
 
 HOW TO USE
 ----------
@@ -24,19 +41,13 @@ Just do:
 go install github.com/yowcow/goromdb
 ```
 
-To boot:
+An example of booting GOROMDB with radix index tree and BerkeleyDB database is:
 
 ```
-goromdb -addr <address to be bound to> -store <data store> -file <path to data file>
+goromdb -addr :11211 -handler radix -storage bdb -file path/to/bdb-data.db -basedir path/to/store
 ```
 
-An example:
-
-```
-goromdb -addr :11211 -store bdb -file path/to/bdb-data.db
-```
-
-GOROMDB currently does not daemonize itself.
+GOROMDB does not daemonize itself.
 
 ### Libraries
 
@@ -57,31 +68,33 @@ Detailed benchmark is comming up.
 DIRECTORY STRUCTURE
 -------------------
 
-When `/tmp/path/to/file.db` is specified to boot option `-file`, GOROMDB creates subdirectories `db00` and `db01` under `/tmp/path/to`,
-then start watching for new data file at `/tmp/path/to/file.db` and its checksum file at `/tmp/path/to/file.db.md5`.
+When `-basedir` of `/tmp/path/to/dir` is specified at boot, GOROMDB creates subdirectories `data00` and `data01` under `/tmp/path/to/dir`:
 
 ```
-/tmp/path/to
+/tmp/path/to/dir
 ├── db00
 └── db01
 ```
 
-When data file and its checksum file is placed in directory `/tmp/path/to`, GOROMDB will verify data file against its checksum file.
+When `-file` of `/tmp/path/to/dir/data.db` is specified at boot, GOROMDB will watch for database file `/tmp/path/to/dir/data.db` and its MD5 sum file `/tmp/path/to/dir/data.db.md5`.
+
+When database and MD5 files are placed in directory `/tmp/path/to/dir`, GOROMDB will verify MD5 sum.
 
 ```
-/tmp/path/to
-├── db00
-├── db01
-├── file.db
-└── file.db.md5
+/tmp/path/to/dir
+├── data00
+├── data01
+├── data.db
+└── data.db.md5
 ```
 
-Once checksum succeeds, GOROMDB will move data file into subdirectory either `db00` or `db01`, and load the data into running server.
+Once MD5 sum verification succeeds, GOROMDB will move data file into subdirectory either `data00` or `data01`, and load the database into running server.
 
 ```
-/tmp/path/to
-├── db00
-│   └── file.db
-├── db01
-└── file.db.md5
+/tmp/path/to/dir
+├── data00
+│   └── data.db
+└── data01
 ```
+
+Placing database and MD5 sum files again will load database into next subdirectory `data01` vice versa.

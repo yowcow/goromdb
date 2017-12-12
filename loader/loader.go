@@ -22,7 +22,7 @@ type Loader struct {
 	previndex int
 }
 
-// NewLoader creates a new loader
+// New creates a new loader
 func New(basedir, filename string) (*Loader, error) {
 	dirs, err := buildDirs(basedir, DirCount)
 	if err != nil {

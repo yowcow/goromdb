@@ -8,11 +8,13 @@ import (
 	"github.com/yowcow/goromdb/storage"
 )
 
+// Handler represents a simple handler
 type Handler struct {
 	storage storage.Storage
 	logger  *log.Logger
 }
 
+// New creates and returns a handler
 func New(stg storage.Storage, logger *log.Logger) handler.Handler {
 	return &Handler{
 		stg,
@@ -20,6 +22,7 @@ func New(stg storage.Storage, logger *log.Logger) handler.Handler {
 	}
 }
 
+// Start starts a handler goroutine
 func (h Handler) Start(filein <-chan string, l *loader.Loader) <-chan bool {
 	done := make(chan bool)
 	go h.start(filein, l, done)
@@ -59,10 +62,12 @@ func (h Handler) start(filein <-chan string, l *loader.Loader, done chan<- bool)
 	}
 }
 
+// Load loads data into storage
 func (h Handler) Load(file string) error {
 	return h.storage.Load(file)
 }
 
+// Get finds value by given key, and returns key and value
 func (h Handler) Get(key []byte) ([]byte, []byte, error) {
 	val, err := h.storage.Get(key)
 	if err != nil {

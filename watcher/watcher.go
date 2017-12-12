@@ -11,6 +11,7 @@ import (
 	"time"
 )
 
+// Watcher represents a watcher
 type Watcher struct {
 	File     string
 	md5file  string
@@ -18,10 +19,12 @@ type Watcher struct {
 	logger   *log.Logger
 }
 
+// New returns a watcher
 func New(file string, interval int, logger *log.Logger) *Watcher {
 	return &Watcher{file, file + ".md5", interval, logger}
 }
 
+// Start starts a watcher goroutine, and returns a channel that outputs a filepath
 func (w Watcher) Start(ctx context.Context) <-chan string {
 	out := make(chan string)
 	go w.watch(ctx, out)
