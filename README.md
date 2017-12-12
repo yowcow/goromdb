@@ -11,6 +11,23 @@ GOROMDB is a datastore that:
 + talks multiple protocols like memcached and others
 + handles multiple database backend like JSON, BerkeleyDB, BoltDB, and others
 
+STRUCTURE
+---------
+
+```
+                     .---------.
+                     | watcher |
+                     '----+----'
+                          |
+        .--------.   .----+----.   .---------.
+TCP --> | server +---+ handler +---+ storage |-.
+        '----+---'   '----+----'   '---------' | <-- Replacable database
+             |            |          '---------'
+       .-----+----.   .---+----.
+       | protocol |   | loader |
+       '----------'   '--------'
+```
+
 HOW TO USE
 ----------
 
