@@ -11,7 +11,9 @@ DB_DIR = data/store
 DB_PATHS = $(addprefix $(DB_DIR)/,$(DB_FILES))
 MD5_PATHS = $(foreach path,$(DB_PATHS),$(path).md5)
 
-all: dep $(DB_DIR) $(DB_PATHS) $(MD5_PATHS) $(BINARY)
+all:
+	$(MAKE) dep
+	$(MAKE) -j 4 $(DB_DIR) $(DB_PATHS) $(MD5_PATHS) $(BINARY)
 
 dep:
 	dep ensure
