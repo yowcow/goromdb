@@ -36,8 +36,8 @@ func (w Watcher) watch(ctx context.Context, out chan<- string) {
 	tc := time.NewTicker(d)
 	defer func() {
 		w.logger.Printf("watcher finished watching for file: %s", w.File)
-		close(out)
 		tc.Stop()
+		close(out)
 	}()
 	w.logger.Printf("watcher started watching for file: %s", w.File)
 	for {

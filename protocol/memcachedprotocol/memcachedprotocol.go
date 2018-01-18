@@ -36,13 +36,7 @@ func (p Protocol) Parse(line []byte) ([][]byte, error) {
 
 // Reply writes reply message to writer
 func (p Protocol) Reply(w io.Writer, k, v []byte) {
-	fmt.Fprintf(
-		w,
-		"VALUE %s 0 %d\r\n%s\r\n",
-		string(k),
-		len(v),
-		string(v),
-	)
+	fmt.Fprintf(w, "VALUE %s 0 %d\r\n%s\r\n", string(k), len(v), string(v))
 }
 
 // Finish writes an end of message to writer

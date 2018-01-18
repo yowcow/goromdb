@@ -21,13 +21,7 @@ type Server struct {
 
 // New creates a new server
 func New(network, addr string, p protocol.Protocol, h handler.Handler, logger *log.Logger) *Server {
-	return &Server{
-		network,
-		addr,
-		p,
-		h,
-		logger,
-	}
+	return &Server{network, addr, p, h, logger}
 }
 
 // Start starts a server and spawns a goroutine when a new connection is accepted

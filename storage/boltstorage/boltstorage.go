@@ -17,11 +17,7 @@ type Storage struct {
 
 // New creates and returns a storage
 func New(b string) *Storage {
-	return &Storage{
-		new(atomic.Value),
-		[]byte(b),
-		new(sync.RWMutex),
-	}
+	return &Storage{new(atomic.Value), []byte(b), new(sync.RWMutex)}
 }
 
 // Load loads a new db handle into storage, and closes old db handle if exists

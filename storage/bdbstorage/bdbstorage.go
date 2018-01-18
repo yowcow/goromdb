@@ -16,10 +16,7 @@ type Storage struct {
 
 // New creates and returns a storage
 func New() *Storage {
-	return &Storage{
-		new(atomic.Value),
-		new(sync.Mutex),
-	}
+	return &Storage{new(atomic.Value), new(sync.Mutex)}
 }
 
 // Load loads a new db handle into storage, and closes old db handle if exists

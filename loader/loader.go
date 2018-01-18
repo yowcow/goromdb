@@ -28,13 +28,7 @@ func New(basedir, filename string) (*Loader, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Loader{
-		basedir,
-		filename,
-		dirs,
-		-1,
-		-1,
-	}, nil
+	return &Loader{basedir, filename, dirs, -1, -1}, nil
 }
 
 func buildDirs(basedir string, count int) ([]string, error) {
