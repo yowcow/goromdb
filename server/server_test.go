@@ -97,10 +97,8 @@ func TestHandleConn(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	go func(d chan<- bool) {
-		defer func() {
-			close(d)
-		}()
+	go func() {
+		defer close(done)
 		for {
 			conn, err := ln.Accept()
 			if err != nil {
@@ -108,7 +106,7 @@ func TestHandleConn(t *testing.T) {
 			}
 			svr.HandleConn(conn)
 		}
-	}(done)
+	}()
 
 	type Case struct {
 		input    string

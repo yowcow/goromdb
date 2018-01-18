@@ -20,12 +20,7 @@ type Handler struct {
 
 // New creates and returns a handler
 func New(stg storage.Storage, logger *log.Logger) handler.Handler {
-	return &Handler{
-		radix.New(),
-		stg,
-		new(sync.RWMutex),
-		logger,
-	}
+	return &Handler{radix.New(), stg, new(sync.RWMutex), logger}
 }
 
 // Start starts a handler goroutine

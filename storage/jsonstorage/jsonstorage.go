@@ -23,11 +23,7 @@ type Storage struct {
 
 // New creates and returns a storage
 func New(gzipped bool) *Storage {
-	return &Storage{
-		gzipped,
-		new(atomic.Value),
-		new(sync.RWMutex),
-	}
+	return &Storage{gzipped, new(atomic.Value), new(sync.RWMutex)}
 }
 
 // Load loads data into storage
