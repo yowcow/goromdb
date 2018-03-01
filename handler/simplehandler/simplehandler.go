@@ -1,7 +1,6 @@
 package simplehandler
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/yowcow/goromdb/handler"
@@ -94,7 +93,7 @@ func (h *Handler) Get(key []byte) ([]byte, []byte, error) {
 // GetNS finds value by given key with namespace, and returns key and value
 func (h *Handler) GetNS(ns, key []byte) ([]byte, error) {
 	if h.nsStorage == nil {
-		return nil, fmt.Errorf("given storage does not support namespace storage")
+		return nil, storage.InternalError("given storage does not support namespace storage")
 	}
 	return h.nsStorage.GetNS(ns, key)
 }

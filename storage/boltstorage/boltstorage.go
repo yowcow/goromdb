@@ -1,7 +1,6 @@
 package boltstorage
 
 import (
-	"fmt"
 	"sync"
 	"sync/atomic"
 
@@ -92,11 +91,11 @@ func (s *Storage) GetNS(ns, key []byte) ([]byte, error) {
 	s.mux.RLock()
 	defer s.mux.RUnlock()
 	if ns == nil {
-		return nil, fmt.Errorf("please specify bucket")
+		return nil, storage.InternalError("please specify bucket")
 	}
 	db := s.getDB()
 	if db == nil {
-		return nil, fmt.Errorf("couldn't load db")
+		return nil, storage.InternalError("couldn't load db")
 	}
 	var val []byte
 	db.View(func(tx *bolt.Tx) error {
