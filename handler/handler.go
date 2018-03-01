@@ -11,7 +11,7 @@ type Handler interface {
 	Get([]byte) ([]byte, []byte, error)
 }
 
-// NSHandler defines an interface to a handler
+// NSHandler defines an interface to a handler with namespace support
 type NSHandler interface {
 	Handler
 	GetNS(ns, key []byte) ([]byte, error)
