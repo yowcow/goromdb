@@ -18,3 +18,9 @@ type Storage interface {
 func KeyNotFoundError(key []byte) error {
 	return fmt.Errorf("key not found error: %s", string(key))
 }
+
+// NSStorage Storage that supports namespace
+type NSStorage interface {
+	Storage
+	GetNS(namespace, key []byte) ([]byte, error)
+}

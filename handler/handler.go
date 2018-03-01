@@ -10,3 +10,9 @@ type Handler interface {
 	Load(string) error
 	Get([]byte) ([]byte, []byte, error)
 }
+
+// NSHandler defines an interface to a handler
+type NSHandler interface {
+	Handler
+	GetNS(ns, key []byte) ([]byte, error)
+}
