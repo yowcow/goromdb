@@ -28,8 +28,8 @@ func New(stg storage.Storage, logger *log.Logger) *Handler {
 	}
 }
 
-// NewWithNS create a handler with namespace storage
-func NewWithNS(stg storage.NSStorage, logger *log.Logger) *Handler {
+// NewNS create a handler with namespace storage
+func NewNS(stg storage.NSStorage, logger *log.Logger) *Handler {
 	return &Handler{
 		nsStorage: stg,
 		logger:    logger,
@@ -78,11 +78,20 @@ func (h *Handler) start(filein <-chan string, l *loader.Loader, done chan<- bool
 
 // Load loads data into storage
 func (h *Handler) Load(file string) error {
-	return h.storage.Load(file)
+	if h.storage != nil {
+		return h.storage.Load(file)
+	}
+	if h.nsStorage != nil {
+		return h.nsStorage.Load(file)
+	}
+	return storage.InternalError("no storage was given")
 }
 
 // Get finds value by given key, and returns key and value
 func (h *Handler) Get(key []byte) ([]byte, []byte, error) {
+	if h.storage == nil {
+		return nil, nil, storage.InternalError("you should specify bucket to use by call GetNS()")
+	}
 	val, err := h.storage.Get(key)
 	if err != nil {
 		return nil, nil, err
