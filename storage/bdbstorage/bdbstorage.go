@@ -24,6 +24,11 @@ func New() *Storage {
 	return &Storage{new(atomic.Value), new(sync.Mutex)}
 }
 
+// NewNS creates and returns a storage
+func NewNS() *Storage {
+	return New()
+}
+
 // Load loads a new db handle into storage, and closes old db handle if exists
 func (s *Storage) Load(file string) error {
 	newDB, err := openBDB(file)
