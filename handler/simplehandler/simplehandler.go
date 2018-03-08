@@ -52,6 +52,8 @@ func (h *Handler) start(filein <-chan string, l *loader.Loader, done chan<- bool
 	if newfile, ok := l.FindAny(); ok {
 		if err := h.Load(newfile); err != nil {
 			h.logger.Printf("simplehandler failed loading data from '%s': %s", newfile, err.Error())
+		} else {
+			h.logger.Printf("simplehandler loaded data from '%s'", newfile)
 		}
 	}
 	for file := range filein {
