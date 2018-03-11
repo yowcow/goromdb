@@ -1,6 +1,7 @@
 package boltstorage
 
 import (
+	"fmt"
 	"sync"
 	"sync/atomic"
 
@@ -98,15 +99,18 @@ func (s *Storage) GetNS(ns, key []byte) ([]byte, error) {
 		return nil, storage.InternalError("couldn't load db")
 	}
 	var val []byte
-	db.View(func(tx *bolt.Tx) error {
-		val = tx.Bucket(ns).Get(key)
+	err := db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket(ns)
+		if b == nil {
+			return storage.InternalError(fmt.Sprintf("bucket %v not found", ns))
+		}
+		val = b.Get(key)
+		if val == nil {
+			return storage.KeyNotFoundError(key)
+		}
 		return nil
 	})
-	if val == nil {
-		return nil, storage.KeyNotFoundError(key)
-	}
-	return val, nil
-
+	return val, err
 }
 
 func iterate(db *bolt.DB, bucket []byte, fn storage.IterationFunc) error {
