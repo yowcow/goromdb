@@ -1,4 +1,5 @@
 [![Build Status](https://travis-ci.org/yowcow/goromdb.svg?branch=master)](https://travis-ci.org/yowcow/goromdb)
+[![Go Report Card](https://goreportcard.com/badge/github.com/yowcow/goromdb)](https://goreportcard.com/report/github.com/yowcow/goromdb)
 
 GOROMDB
 =======
