@@ -16,6 +16,7 @@ all:
 	$(MAKE) -j 4 $(DB_PATHS) $(MD5_PATHS) $(BINARY)
 
 dep:
+	which dep || go get -u -v github.com/golang/dep/cmd/dep
 	dep ensure -v
 
 test:
