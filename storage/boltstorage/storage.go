@@ -10,8 +10,7 @@ import (
 )
 
 var (
-	_ storage.Storage   = (*Storage)(nil)
-	_ storage.NSStorage = (*Storage)(nil)
+	_ storage.Storage = (*Storage)(nil)
 )
 
 // Storage represents a BoltDB storage
@@ -24,11 +23,6 @@ type Storage struct {
 // New creates and returns a storage
 func New(b string) *Storage {
 	return &Storage{new(atomic.Value), []byte(b), new(sync.RWMutex)}
-}
-
-// NewNS creates and returns a storage
-func NewNS() *Storage {
-	return &Storage{new(atomic.Value), nil, new(sync.RWMutex)}
 }
 
 // Load loads a new db handle into storage, and closes old db handle if exists
@@ -84,25 +78,23 @@ func openDB(file string) (*bolt.DB, error) {
 
 // Get finds a given key in db, and returns its value
 func (s *Storage) Get(key []byte) ([]byte, error) {
-	return s.GetNS(s.bucket, key)
-}
-
-// GetNS finds a given bucket and key in db, and returns its value
-func (s *Storage) GetNS(ns, key []byte) ([]byte, error) {
-	s.mux.RLock()
-	defer s.mux.RUnlock()
-	if ns == nil {
-		return nil, storage.InternalError("please specify bucket")
-	}
 	db := s.getDB()
 	if db == nil {
 		return nil, storage.InternalError("couldn't load db")
 	}
+
+	s.mux.RLock()
+	defer s.mux.RUnlock()
+
+	return getFromBucket(db, s.bucket, key)
+}
+
+func getFromBucket(db *bolt.DB, bucket, key []byte) ([]byte, error) {
 	var val []byte
 	err := db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket(ns)
+		b := tx.Bucket(bucket)
 		if b == nil {
-			return storage.InternalError(fmt.Sprintf("bucket %v not found", ns))
+			return storage.InternalError(fmt.Sprintf("bucket %v not found", bucket))
 		}
 		val = b.Get(key)
 		if val == nil {
