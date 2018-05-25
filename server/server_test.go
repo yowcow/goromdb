@@ -68,10 +68,6 @@ func (s TestStorage) Load(file string) error {
 	return nil
 }
 
-func (s TestStorage) LoadAndIterate(file string, fn storage.IterationFunc) error {
-	return fmt.Errorf("iteration not supported")
-}
-
 func (s TestStorage) Get(key []byte) ([]byte, error) {
 	if v, ok := s.data[string(key)]; ok {
 		return []byte(v), nil

@@ -9,6 +9,10 @@ import (
 	"github.com/yowcow/goromdb/storage"
 )
 
+var (
+	_ storage.Storage = (*Storage)(nil)
+)
+
 const _Zero uint8 = 0
 
 // Storage represents a memcachedb storage
@@ -26,18 +30,17 @@ func (s Storage) Load(file string) error {
 	return s.proxy.Load(file)
 }
 
-// LoadAndIterate loads data into storage, and iterate through newly loaded data
-func (s Storage) LoadAndIterate(file string, fn storage.IterationFunc) error {
-	return s.proxy.LoadAndIterate(file, fn)
-}
-
 // Get finds a given key in storage, deserialize its value into memcachedb format, and returns
 func (s Storage) Get(key []byte) ([]byte, error) {
 	val, err := s.proxy.Get(key)
 	if err != nil {
 		return nil, err
 	}
-	r := bytes.NewReader(val)
+	return unmarshalMemcachedbBytes(key, val)
+}
+
+func unmarshalMemcachedbBytes(key, b []byte) ([]byte, error) {
+	r := bytes.NewReader(b)
 	_, v, _, err := Deserialize(r)
 	if err != nil {
 		return nil, storage.KeyNotFoundError(key)

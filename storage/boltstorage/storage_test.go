@@ -51,29 +51,6 @@ func TestLoad(t *testing.T) {
 	}
 }
 
-func TestLoadAndIterate(t *testing.T) {
-	s := New("goromdb")
-
-	data := make(map[string]string)
-	expected := [][]byte{
-		[]byte("hoge"),
-		[]byte("fuga"),
-		[]byte("foo"),
-		[]byte("bar"),
-		[]byte("buz"),
-	}
-	iterFunc := func(k, v []byte) error {
-		assert.Contains(t, expected, k)
-		data[string(k)] = string(v)
-		return nil
-	}
-
-	err := s.LoadAndIterate(sampleDBFile, iterFunc)
-
-	assert.Nil(t, err)
-	assert.Equal(t, 5, len(data))
-}
-
 func TestGet(t *testing.T) {
 	s := New("goromdb")
 	v, err := s.Get([]byte("hoge"))

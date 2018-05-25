@@ -1,4 +1,4 @@
-package radixhandler
+package simplehandler
 
 import (
 	"bytes"
@@ -17,16 +17,14 @@ var sampleDataFile = "../../data/store/sample-data.json"
 
 func TestNew(t *testing.T) {
 	stg := jsonstorage.New(false)
-
 	logbuf := new(bytes.Buffer)
 	logger := log.New(logbuf, "", 0)
 
-	New(stg, logger)
+	_ = New(stg, logger)
 }
 
 func TestLoadAndGet(t *testing.T) {
 	stg := jsonstorage.New(false)
-
 	logbuf := new(bytes.Buffer)
 	logger := log.New(logbuf, "", 0)
 
@@ -35,45 +33,10 @@ func TestLoadAndGet(t *testing.T) {
 
 	assert.Nil(t, err)
 
-	type Case struct {
-		input       []byte
-		expectError bool
-		expectedKey []byte
-		expectedVal []byte
-		subtest     string
-	}
-	cases := []Case{
-		{
-			[]byte("ho"),
-			true,
-			nil,
-			nil,
-			"non-existing key fails",
-		},
-		{
-			[]byte("hoge"),
-			false,
-			[]byte("hoge"),
-			[]byte("hoge!"),
-			"exact match on key succeeds",
-		},
-		{
-			[]byte("hogefuga"),
-			false,
-			[]byte("hoge"),
-			[]byte("hoge!"),
-			"prefix match on key succeeds",
-		},
-	}
+	val, err := h.Get([]byte("hoge"))
 
-	for _, c := range cases {
-		t.Run(c.subtest, func(t *testing.T) {
-			k, v, err := h.Get(c.input)
-			assert.Equal(t, c.expectError, err != nil)
-			assert.Equal(t, c.expectedKey, k)
-			assert.Equal(t, c.expectedVal, v)
-		})
-	}
+	assert.Nil(t, err)
+	assert.Equal(t, []byte("hoge!"), val)
 }
 
 func TestStart(t *testing.T) {
@@ -81,13 +44,12 @@ func TestStart(t *testing.T) {
 	defer os.RemoveAll(dir)
 
 	stg := jsonstorage.New(false)
-
 	logbuf := new(bytes.Buffer)
 	logger := log.New(logbuf, "", 0)
 
 	h := New(stg, logger)
 	filein := make(chan string)
-	l, _ := loader.New(dir, "radix.data")
+	l, _ := loader.New(dir, "test.data")
 	done := h.Start(filein, l)
 
 	file := filepath.Join(dir, "dropin.db")
@@ -96,10 +58,9 @@ func TestStart(t *testing.T) {
 		filein <- file
 	}
 
-	key, val, err := h.Get([]byte("hogefuga"))
+	val, err := h.Get([]byte("hoge"))
 
 	assert.Nil(t, err)
-	assert.Equal(t, []byte("hoge"), key)
 	assert.Equal(t, []byte("hoge!"), val)
 
 	close(filein)

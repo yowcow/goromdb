@@ -27,10 +27,6 @@
 
 [[constraint]]
   branch = "master"
-  name = "github.com/armon/go-radix"
-
-[[constraint]]
-  branch = "master"
   name = "github.com/bradfitz/gomemcache"
 
 [[constraint]]

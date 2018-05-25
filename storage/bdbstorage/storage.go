@@ -9,8 +9,7 @@ import (
 )
 
 var (
-	_ storage.Storage   = (*Storage)(nil)
-	_ storage.NSStorage = (*Storage)(nil)
+	_ storage.Storage = (*Storage)(nil)
 )
 
 // Storage represents a BDB storage
@@ -24,36 +23,9 @@ func New() *Storage {
 	return &Storage{new(atomic.Value), new(sync.Mutex)}
 }
 
-// NewNS creates and returns a storage
-func NewNS() *Storage {
-	return New()
-}
-
 // Load loads a new db handle into storage, and closes old db handle if exists
 func (s *Storage) Load(file string) error {
 	newDB, err := openBDB(file)
-	if err != nil {
-		return err
-	}
-
-	s.mux.Lock()
-	defer s.mux.Unlock()
-
-	oldDB := s.getDB()
-	s.db.Store(newDB)
-	if oldDB != nil {
-		oldDB.Close(0)
-	}
-	return nil
-}
-
-// LoadAndIterate loads new db handle into storage, iterate through newly loaded db handle, and closes old db handle if exists
-func (s *Storage) LoadAndIterate(file string, fn storage.IterationFunc) error {
-	newDB, err := openBDB(file)
-	if err != nil {
-		return err
-	}
-	err = iterate(newDB, fn)
 	if err != nil {
 		return err
 	}
@@ -93,27 +65,4 @@ func (s *Storage) Get(key []byte) ([]byte, error) {
 		return nil, storage.KeyNotFoundError(key)
 	}
 	return v, nil
-}
-
-// GetNS finds a given ns+key in db, and returns its value
-func (s *Storage) GetNS(ns, key []byte) ([]byte, error) {
-	fullKey := make([]byte, 0, len(ns)+len(key))
-	fullKey = append(fullKey, ns...)
-	fullKey = append(fullKey, key...)
-	return s.Get(fullKey)
-}
-
-func iterate(db *bdb.BerkeleyDB, fn storage.IterationFunc) error {
-	cur, err := db.NewCursor(bdb.NoTxn, 0)
-	if err != nil {
-		return err
-	}
-	defer cur.Close()
-
-	for k, v, err := cur.First(); err == nil; k, v, err = cur.Next() {
-		if err = fn(k, v); err != nil {
-			return err
-		}
-	}
-	return nil
 }

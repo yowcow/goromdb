@@ -8,7 +8,6 @@ import (
 	"os"
 
 	"github.com/yowcow/goromdb/handler"
-	"github.com/yowcow/goromdb/handler/radixhandler"
 	"github.com/yowcow/goromdb/handler/simplehandler"
 	"github.com/yowcow/goromdb/loader"
 	"github.com/yowcow/goromdb/protocol"
@@ -39,7 +38,7 @@ func main() {
 
 	flag.StringVar(&addr, "addr", ":11211", "address to bind to")
 	flag.StringVar(&protoBackend, "proto", "memcached", "protocol: memcached")
-	flag.StringVar(&handlerBackend, "handler", "simple", "handler: simple, radix")
+	flag.StringVar(&handlerBackend, "handler", "simple", "handler: simple")
 	flag.StringVar(&storageBackend, "storage", "json", "storage: json, bdb, boltdb, memcachedb-bdb")
 	flag.StringVar(&file, "file", "/tmp/goromdb", "data file to be loaded into store")
 	flag.BoolVar(&gzipped, "gzipped", false, "whether or not loading file is gzipped")
@@ -109,8 +108,6 @@ func createHandler(
 	switch handlerBackend {
 	case "simple":
 		return simplehandler.New(stg, logger), nil
-	case "radix":
-		return radixhandler.New(stg, logger), nil
 	default:
 		return nil, fmt.Errorf("don't know how to handle handler '%s'", handlerBackend)
 	}

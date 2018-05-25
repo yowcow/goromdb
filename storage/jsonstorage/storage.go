@@ -11,8 +11,12 @@ import (
 	"github.com/yowcow/goromdb/storage"
 )
 
+var (
+	_ storage.Storage = (*Storage)(nil)
+)
+
 // Data represents a data
-type Data map[string]string
+type Data map[string]interface{}
 
 // Storage represents a JSON storage
 type Storage struct {
@@ -29,25 +33,6 @@ func New(gzipped bool) *Storage {
 // Load loads data into storage
 func (s *Storage) Load(file string) error {
 	data, err := s.openFile(file)
-	if err != nil {
-		return err
-	}
-
-	// Lock, switch, and unlock
-	s.mux.Lock()
-	defer s.mux.Unlock()
-
-	s.data.Store(data)
-	return nil
-}
-
-// LoadAndIterate loads data into storage, and iterate through newly loaded data
-func (s *Storage) LoadAndIterate(file string, fn storage.IterationFunc) error {
-	data, err := s.openFile(file)
-	if err != nil {
-		return err
-	}
-	err = iterate(data, fn)
 	if err != nil {
 		return err
 	}
@@ -103,16 +88,7 @@ func (s Storage) Get(key []byte) ([]byte, error) {
 	data := ptr.(Data)
 	k := string(key)
 	if v, ok := data[k]; ok {
-		return []byte(v), nil
+		return []byte(v.(string)), nil
 	}
 	return nil, storage.KeyNotFoundError(key)
-}
-
-func iterate(data Data, fn storage.IterationFunc) error {
-	for k, v := range data {
-		if err := fn([]byte(k), []byte(v)); err != nil {
-			return err
-		}
-	}
-	return nil
 }

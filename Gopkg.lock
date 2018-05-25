@@ -8,12 +8,6 @@
   revision = "94781d9018db078396807d7e084ab7a17fcc0210"
 
 [[projects]]
-  branch = "master"
-  name = "github.com/armon/go-radix"
-  packages = ["."]
-  revision = "1fca145dffbcaa8fe914309b1ec0cfc67500fe61"
-
-[[projects]]
   name = "github.com/boltdb/bolt"
   packages = ["."]
   revision = "2f1ce7a837dcb8da3ec595b1dac9d0632f0f99e8"
@@ -52,6 +46,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "f135c884913b9edf2f5969b8dd3b00bcb06a22ba3402f944f37dbb4cb0b6928d"
+  inputs-digest = "186ef8074f3d61c8b293fa070f68d0c9a807a06ade73e00c72aeb37b6cffca7e"
   solver-name = "gps-cdcl"
   solver-version = 1

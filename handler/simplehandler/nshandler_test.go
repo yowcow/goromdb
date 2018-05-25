@@ -13,60 +13,55 @@ import (
 	"github.com/yowcow/goromdb/testutil"
 )
 
-var sampleDataFile = "../../storage/jsonstorage/valid.json"
+var sampleNSDataFile = "../../data/store/sample-ns-data.json"
 
-func TestNew(t *testing.T) {
-	stg := jsonstorage.New(false)
-
+func TestNewNS(t *testing.T) {
+	stg := jsonstorage.NewNS(false)
 	logbuf := new(bytes.Buffer)
 	logger := log.New(logbuf, "", 0)
 
-	_ = New(stg, logger)
+	_ = NewNS(stg, logger)
 }
 
-func TestLoadAndGet(t *testing.T) {
-	stg := jsonstorage.New(false)
-
+func TestLoadAndGetNS(t *testing.T) {
+	stg := jsonstorage.NewNS(false)
 	logbuf := new(bytes.Buffer)
 	logger := log.New(logbuf, "", 0)
 
-	h := New(stg, logger)
-	err := h.Load(sampleDataFile)
+	h := NewNS(stg, logger)
+	err := h.Load(sampleNSDataFile)
 
 	assert.Nil(t, err)
 
-	key, val, err := h.Get([]byte("hoge"))
+	val, err := h.GetNS([]byte("ns1"), []byte("hoge"))
 
 	assert.Nil(t, err)
-	assert.Equal(t, []byte("hoge"), key)
-	assert.Equal(t, []byte("hogehoge"), val)
+	assert.Equal(t, []byte("hoge1"), val)
 }
 
-func TestStart(t *testing.T) {
+func TestStartNS(t *testing.T) {
 	dir := testutil.CreateTmpDir()
 	defer os.RemoveAll(dir)
 
-	stg := jsonstorage.New(false)
-
+	stg := jsonstorage.NewNS(false)
 	logbuf := new(bytes.Buffer)
 	logger := log.New(logbuf, "", 0)
 
-	h := New(stg, logger)
+	h := NewNS(stg, logger)
 	filein := make(chan string)
 	l, _ := loader.New(dir, "test.data")
 	done := h.Start(filein, l)
 
 	file := filepath.Join(dir, "dropin.db")
 	for i := 0; i < 10; i++ {
-		testutil.CopyFile(file, sampleDataFile)
+		testutil.CopyFile(file, sampleNSDataFile)
 		filein <- file
 	}
 
-	key, val, err := h.Get([]byte("hoge"))
+	val, err := h.GetNS([]byte("ns2"), []byte("hoge"))
 
 	assert.Nil(t, err)
-	assert.Equal(t, []byte("hoge"), key)
-	assert.Equal(t, []byte("hogehoge"), val)
+	assert.Equal(t, []byte("hoge2"), val)
 
 	close(filein)
 	<-done

@@ -1,0 +1,8 @@
+{
+  "hoge": {
+    "fuga": "hoge-fuga!"
+  },
+  "foo": {
+    "bar": "foo-bar!"
+  }
+}

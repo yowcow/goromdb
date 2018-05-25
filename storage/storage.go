@@ -4,8 +4,17 @@ import (
 	"fmt"
 )
 
-// IterationFunc defines an interface to a callback function for LoadAndIterate()
-type IterationFunc func([]byte, []byte) error
+// Storage defines an interface to a storage
+type Storage interface {
+	Get(key []byte) ([]byte, error)
+	Load(string) error
+}
+
+// NSStorage defines an interface to a namespaced storage
+type NSStorage interface {
+	Storage
+	GetNS(namespace, key []byte) ([]byte, error)
+}
 
 // ErrorKeyNotFound key-not-found error type
 type ErrorKeyNotFound struct {
@@ -15,13 +24,6 @@ type ErrorKeyNotFound struct {
 // ErrorInternal internal error
 type ErrorInternal struct {
 	error
-}
-
-// Storage defines an interface to a storage
-type Storage interface {
-	Get([]byte) ([]byte, error)
-	Load(string) error
-	LoadAndIterate(string, IterationFunc) error
 }
 
 // KeyNotFoundError returns an error for key-not-found
@@ -48,10 +50,4 @@ func IsErrorKeyNotFound(err error) bool {
 	default:
 		return false
 	}
-}
-
-// NSStorage Storage that supports namespace
-type NSStorage interface {
-	Storage
-	GetNS(namespace, key []byte) ([]byte, error)
 }
