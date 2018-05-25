@@ -48,7 +48,10 @@ An example of booting GOROMDB with BerkeleyDB database is:
 goromdb -addr :11211 -storage bdb -file path/to/bdb-data.db -basedir path/to/store
 ```
 
-GOROMDB does not daemonize itself.
+Note that default compilation of the binary only covers basic features of GOROMDB.
+If full capability, like namespaced database, and/or multiple database file deployment, is required, craft libraries and build GOROMDB for your own.
+
+GOROMDB does not daemonize itself.  Look of other tools to daemonize GOROMDB.
 
 ### Libraries
 
