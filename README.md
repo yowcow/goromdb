@@ -42,10 +42,10 @@ Just do:
 go install github.com/yowcow/goromdb
 ```
 
-An example of booting GOROMDB with radix index tree and BerkeleyDB database is:
+An example of booting GOROMDB with BerkeleyDB database is:
 
 ```
-goromdb -addr :11211 -handler radix -storage bdb -file path/to/bdb-data.db -basedir path/to/store
+goromdb -addr :11211 -storage bdb -file path/to/bdb-data.db -basedir path/to/store
 ```
 
 GOROMDB does not daemonize itself.
