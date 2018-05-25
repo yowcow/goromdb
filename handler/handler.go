@@ -8,7 +8,7 @@ import (
 type Handler interface {
 	Start(<-chan string, *loader.Loader) <-chan bool
 	Load(string) error
-	Get([]byte) ([]byte, []byte, error)
+	Get(key []byte) ([]byte, error)
 }
 
 // NSHandler defines an interface to a handler with namespace support
