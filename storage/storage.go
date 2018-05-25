@@ -21,7 +21,6 @@ type ErrorInternal struct {
 type Storage interface {
 	Get([]byte) ([]byte, error)
 	Load(string) error
-	LoadAndIterate(string, IterationFunc) error
 }
 
 // KeyNotFoundError returns an error for key-not-found

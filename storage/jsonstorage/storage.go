@@ -45,25 +45,6 @@ func (s *Storage) Load(file string) error {
 	return nil
 }
 
-// LoadAndIterate loads data into storage, and iterate through newly loaded data
-func (s *Storage) LoadAndIterate(file string, fn storage.IterationFunc) error {
-	data, err := s.openFile(file)
-	if err != nil {
-		return err
-	}
-	err = iterate(data, fn)
-	if err != nil {
-		return err
-	}
-
-	// Lock, switch, and unlock
-	s.mux.Lock()
-	defer s.mux.Unlock()
-
-	s.data.Store(data)
-	return nil
-}
-
 func (s Storage) openFile(file string) (Data, error) {
 	fi, err := os.Open(file)
 	if err != nil {

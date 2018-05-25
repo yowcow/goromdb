@@ -41,28 +41,6 @@ func (s *Storage) Load(file string) error {
 	return nil
 }
 
-// LoadAndIterate loads new db handle into storage, iterate through newly loaded db handle, and closes old db handle if exists
-func (s *Storage) LoadAndIterate(file string, fn storage.IterationFunc) error {
-	newDB, err := openBDB(file)
-	if err != nil {
-		return err
-	}
-	err = iterate(newDB, fn)
-	if err != nil {
-		return err
-	}
-
-	s.mux.Lock()
-	defer s.mux.Unlock()
-
-	oldDB := s.getDB()
-	s.db.Store(newDB)
-	if oldDB != nil {
-		oldDB.Close(0)
-	}
-	return nil
-}
-
 func (s *Storage) getDB() *bdb.BerkeleyDB {
 	if ptr := s.db.Load(); ptr != nil {
 		return ptr.(*bdb.BerkeleyDB)

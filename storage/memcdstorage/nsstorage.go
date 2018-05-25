@@ -21,11 +21,6 @@ func (s NSStorage) Load(file string) error {
 	return s.proxy.Load(file)
 }
 
-// LoadAndIterate loads data into storage, and iterate through newly loaded data
-func (s NSStorage) LoadAndIterate(file string, fn storage.IterationFunc) error {
-	return s.proxy.LoadAndIterate(file, fn)
-}
-
 // Get finds a given key in storage, deserialize its value into memcachedb format, and returns
 func (s NSStorage) Get(key []byte) ([]byte, error) {
 	val, err := s.proxy.Get(key)
