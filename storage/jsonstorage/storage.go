@@ -12,7 +12,7 @@ import (
 )
 
 // Data represents a data
-type Data map[string]string
+type Data map[string]interface{}
 
 // Storage represents a JSON storage
 type Storage struct {
@@ -20,6 +20,10 @@ type Storage struct {
 	data    *atomic.Value
 	mux     *sync.RWMutex
 }
+
+var (
+	_ storage.Storage = (*Storage)(nil)
+)
 
 // New creates and returns a storage
 func New(gzipped bool) *Storage {
@@ -103,14 +107,14 @@ func (s Storage) Get(key []byte) ([]byte, error) {
 	data := ptr.(Data)
 	k := string(key)
 	if v, ok := data[k]; ok {
-		return []byte(v), nil
+		return []byte(v.(string)), nil
 	}
 	return nil, storage.KeyNotFoundError(key)
 }
 
 func iterate(data Data, fn storage.IterationFunc) error {
 	for k, v := range data {
-		if err := fn([]byte(k), []byte(v)); err != nil {
+		if err := fn([]byte(k), []byte(v.(string))); err != nil {
 			return err
 		}
 	}
