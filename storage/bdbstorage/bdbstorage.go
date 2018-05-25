@@ -8,6 +8,11 @@ import (
 	"github.com/yowcow/goromdb/storage"
 )
 
+var (
+	_ storage.Storage   = (*Storage)(nil)
+	_ storage.NSStorage = (*Storage)(nil)
+)
+
 // Storage represents a BDB storage
 type Storage struct {
 	db  *atomic.Value
@@ -17,6 +22,11 @@ type Storage struct {
 // New creates and returns a storage
 func New() *Storage {
 	return &Storage{new(atomic.Value), new(sync.Mutex)}
+}
+
+// NewNS creates and returns a storage
+func NewNS() *Storage {
+	return New()
 }
 
 // Load loads a new db handle into storage, and closes old db handle if exists
@@ -59,7 +69,7 @@ func (s *Storage) LoadAndIterate(file string, fn storage.IterationFunc) error {
 	return nil
 }
 
-func (s Storage) getDB() *bdb.BerkeleyDB {
+func (s *Storage) getDB() *bdb.BerkeleyDB {
 	if ptr := s.db.Load(); ptr != nil {
 		return ptr.(*bdb.BerkeleyDB)
 	}
@@ -71,17 +81,26 @@ func openBDB(file string) (*bdb.BerkeleyDB, error) {
 }
 
 // Get finds a given key in db, and returns its value
-func (s Storage) Get(key []byte) ([]byte, error) {
+func (s *Storage) Get(key []byte) ([]byte, error) {
 	s.mux.Lock()
 	defer s.mux.Unlock()
-	if db := s.getDB(); db != nil {
-		v, err := db.Get(bdb.NoTxn, key, 0)
-		if err != nil {
-			return nil, storage.KeyNotFoundError(key)
-		}
-		return v, nil
+	db := s.getDB()
+	if db == nil {
+		return nil, storage.InternalError("couldn't load db")
 	}
-	return nil, storage.KeyNotFoundError(key)
+	v, err := db.Get(bdb.NoTxn, key, 0)
+	if err != nil {
+		return nil, storage.KeyNotFoundError(key)
+	}
+	return v, nil
+}
+
+// GetNS finds a given ns+key in db, and returns its value
+func (s *Storage) GetNS(ns, key []byte) ([]byte, error) {
+	fullKey := make([]byte, 0, len(ns)+len(key))
+	fullKey = append(fullKey, ns...)
+	fullKey = append(fullKey, key...)
+	return s.Get(fullKey)
 }
 
 func iterate(db *bdb.BerkeleyDB, fn storage.IterationFunc) error {

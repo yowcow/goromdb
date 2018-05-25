@@ -49,3 +49,9 @@ func IsErrorKeyNotFound(err error) bool {
 		return false
 	}
 }
+
+// NSStorage Storage that supports namespace
+type NSStorage interface {
+	Storage
+	GetNS(namespace, key []byte) ([]byte, error)
+}
