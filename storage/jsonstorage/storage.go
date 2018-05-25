@@ -11,6 +11,10 @@ import (
 	"github.com/yowcow/goromdb/storage"
 )
 
+var (
+	_ storage.Storage = (*Storage)(nil)
+)
+
 // Data represents a data
 type Data map[string]interface{}
 
@@ -20,10 +24,6 @@ type Storage struct {
 	data    *atomic.Value
 	mux     *sync.RWMutex
 }
-
-var (
-	_ storage.Storage = (*Storage)(nil)
-)
 
 // New creates and returns a storage
 func New(gzipped bool) *Storage {
