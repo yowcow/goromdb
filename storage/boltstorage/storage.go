@@ -82,15 +82,3 @@ func getFromBucket(db *bolt.DB, bucket, key []byte) ([]byte, error) {
 	})
 	return val, err
 }
-
-func iterate(db *bolt.DB, bucket []byte, fn storage.IterationFunc) error {
-	return db.View(func(tx *bolt.Tx) error {
-		cursor := tx.Bucket(bucket).Cursor()
-		for k, v := cursor.First(); k != nil; k, v = cursor.Next() {
-			if err := fn(k, v); err != nil {
-				return err
-			}
-		}
-		return nil
-	})
-}

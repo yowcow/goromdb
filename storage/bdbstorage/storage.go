@@ -66,18 +66,3 @@ func (s *Storage) Get(key []byte) ([]byte, error) {
 	}
 	return v, nil
 }
-
-func iterate(db *bdb.BerkeleyDB, fn storage.IterationFunc) error {
-	cur, err := db.NewCursor(bdb.NoTxn, 0)
-	if err != nil {
-		return err
-	}
-	defer cur.Close()
-
-	for k, v, err := cur.First(); err == nil; k, v, err = cur.Next() {
-		if err = fn(k, v); err != nil {
-			return err
-		}
-	}
-	return nil
-}

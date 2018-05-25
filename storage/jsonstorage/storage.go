@@ -92,12 +92,3 @@ func (s Storage) Get(key []byte) ([]byte, error) {
 	}
 	return nil, storage.KeyNotFoundError(key)
 }
-
-func iterate(data Data, fn storage.IterationFunc) error {
-	for k, v := range data {
-		if err := fn([]byte(k), []byte(v.(string))); err != nil {
-			return err
-		}
-	}
-	return nil
-}
