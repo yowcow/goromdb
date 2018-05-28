@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net"
 	"os"
 
 	"github.com/yowcow/goromdb/handler"
@@ -90,8 +91,19 @@ func main() {
 		os.Getpid(), addr, protoBackend, handlerBackend, storageBackend, file,
 	)
 
-	svr := server.New("tcp", addr, proto, h, logger)
-	err = svr.Start()
+	svr := server.New("tcp", addr, logger)
+	err = svr.Start(server.OnReadCallbackFunc(func(conn net.Conn, line []byte, logger *log.Logger) {
+		if keys, err := proto.Parse(line); err != nil {
+			logger.Printf("server failed parsing a line: %s", err)
+		} else {
+			for _, k := range keys {
+				if v, _ := h.Get(k); v != nil {
+					proto.Reply(conn, k, v)
+				}
+			}
+		}
+		proto.Finish(conn)
+	}))
 	if err != nil {
 		logger.Printf("failed booting goromdb: %s", err.Error())
 		os.Exit(1)
