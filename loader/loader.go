@@ -54,24 +54,39 @@ func buildDirs(basedir string, count int) ([]string, error) {
 }
 
 // FindAny tries finding a file to load in any existing subdirectiries, and returns its filepath
-func (l Loader) FindAny() (string, bool) {
+func (l *Loader) FindAny() (string, bool) {
 	for i := 0; i < DirCount; i++ {
 		file := filepath.Join(l.dirs[i], l.filename)
 		if _, err := os.Stat(file); err == nil {
+			l.curindex = i
+			l.previndex = decrIndex(i)
 			return file, true
 		}
 	}
 	return "", false
 }
 
+func incrIndex(i int) int {
+	n := i + 1
+	if n >= DirCount {
+		return 0
+	}
+	return n
+}
+
+func decrIndex(i int) int {
+	n := i - 1
+	if n < 0 {
+		return DirCount - 1
+	}
+	return n
+}
+
 // DropIn drops given file into next subdirectory, and returns the filepath
 func (l *Loader) DropIn(file string) (string, error) {
 	defer syscall.Sync() // make sure write is in sync
 
-	nextindex := l.curindex + 1
-	if nextindex >= len(l.dirs) {
-		nextindex = 0
-	}
+	nextindex := incrIndex(l.curindex)
 	nextdir := l.dirs[nextindex]
 	nextfile := filepath.Join(nextdir, l.filename)
 	if err := os.Rename(file, nextfile); err != nil {
