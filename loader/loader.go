@@ -60,6 +60,7 @@ func (l *Loader) FindAny() (string, bool) {
 		if _, err := os.Stat(file); err == nil {
 			l.curindex = i
 			l.previndex = l.decrIndex(i)
+			fmt.Println("curindex:", l.curindex, ", previndex:", l.previndex)
 			return file, true
 		}
 	}
@@ -76,7 +77,6 @@ func (l Loader) incrIndex(i int) int {
 
 func (l Loader) decrIndex(i int) int {
 	n := i - 1
-	fmt.Println("after decr:", n)
 	if n < 0 {
 		return DirCount - 1
 	}
