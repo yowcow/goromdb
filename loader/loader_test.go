@@ -74,30 +74,57 @@ func TestNew(t *testing.T) {
 }
 
 func TestFindAny(t *testing.T) {
-	dir := testutil.CreateTmpDir()
-	defer os.RemoveAll(dir)
-
-	loader, _ := New(dir, "test.data")
-	file00 := filepath.Join(dir, "data00", "test.data")
-	file01 := filepath.Join(dir, "data01", "test.data")
-
-	{
-		_, ok := loader.FindAny()
-		assert.False(t, ok)
+	type Case struct {
+		subtest           string
+		dirToCreateFile   string
+		expectedOK        bool
+		expectedPrevindex int
+		expectedCurindex  int
+	}
+	cases := []Case{
+		{
+			"no pre-existing file",
+			"",
+			false,
+			-1,
+			-1,
+		},
+		{
+			"pre-existing file in data00",
+			"data00",
+			true,
+			1,
+			0,
+		},
+		{
+			"pre-existing file in data01",
+			"data01",
+			true,
+			0,
+			1,
+		},
 	}
 
-	{
-		testutil.CopyFile(file01, "loader_test.go")
-		file, ok := loader.FindAny()
-		assert.True(t, ok)
-		assert.Equal(t, file01, file)
-	}
+	for _, c := range cases {
+		t.Run(c.subtest, func(t *testing.T) {
+			dir := testutil.CreateTmpDir()
+			defer os.RemoveAll(dir)
 
-	{
-		testutil.CopyFile(file00, "loader_test.go")
-		file, ok := loader.FindAny()
-		assert.True(t, ok)
-		assert.Equal(t, file00, file)
+			loader, _ := New(dir, "test.data")
+
+			expectedFile := ""
+			if c.dirToCreateFile != "" {
+				expectedFile = filepath.Join(dir, c.dirToCreateFile, "test.data")
+				testutil.CopyFile(expectedFile, "loader_test.go")
+			}
+
+			file, ok := loader.FindAny()
+
+			assert.Equal(t, c.expectedOK, ok)
+			assert.Equal(t, expectedFile, file)
+			assert.Equal(t, c.expectedPrevindex, loader.previndex)
+			assert.Equal(t, c.expectedCurindex, loader.curindex)
+		})
 	}
 }
 
