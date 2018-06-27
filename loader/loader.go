@@ -66,20 +66,20 @@ func (l *Loader) FindAny() (string, bool) {
 	return "", false
 }
 
-func (l *Loader) incrIndex(i int) int {
-	i++
-	if i >= len(l.dirs) {
+func (l Loader) incrIndex(i int) int {
+	n := i + 1
+	if n >= DirCount {
 		return 0
 	}
-	return i
+	return n
 }
 
-func (l *Loader) decrIndex(i int) int {
-	i--
-	if i < 0 {
-		return len(l.dirs) - 1
+func (l Loader) decrIndex(i int) int {
+	n := i - 1
+	if n < 0 {
+		return DirCount - 1
 	}
-	return i
+	return n
 }
 
 // DropIn drops given file into next subdirectory, and returns the filepath
