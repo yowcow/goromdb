@@ -22,7 +22,7 @@ dep:
 	dep ensure -v
 
 test:
-	go test ./...
+	go test ./... -v
 
 $(DB_DIR):
 	mkdir -p $@
