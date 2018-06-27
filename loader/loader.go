@@ -76,6 +76,7 @@ func (l Loader) incrIndex(i int) int {
 
 func (l Loader) decrIndex(i int) int {
 	n := i - 1
+	fmt.Println("after decr:", n)
 	if n < 0 {
 		return DirCount - 1
 	}
