@@ -111,7 +111,7 @@ func TestFindAny(t *testing.T) {
 			dir := testutil.CreateTmpDir()
 			defer os.RemoveAll(dir)
 
-			loader, _ := New(dir, "test.data")
+			l, _ := New(dir, "test.data")
 
 			expectedFile := ""
 			if c.dirToCreateFile != "" {
@@ -120,12 +120,12 @@ func TestFindAny(t *testing.T) {
 			}
 			fmt.Println(expectedFile)
 
-			file, ok := loader.FindAny()
+			file, ok := l.FindAny()
 
 			assert.Equal(t, c.expectedOK, ok)
 			assert.Equal(t, expectedFile, file)
-			assert.Equal(t, c.expectedPrevindex, loader.previndex)
-			assert.Equal(t, c.expectedCurindex, loader.curindex)
+			assert.Equal(t, c.expectedPrevindex, l.previndex)
+			assert.Equal(t, c.expectedCurindex, l.curindex)
 		})
 	}
 }
