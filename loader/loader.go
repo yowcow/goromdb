@@ -59,15 +59,14 @@ func (l *Loader) FindAny() (string, bool) {
 		file := filepath.Join(l.dirs[i], l.filename)
 		if _, err := os.Stat(file); err == nil {
 			l.curindex = i
-			l.previndex = l.decrIndex(i)
-			fmt.Println("curindex:", l.curindex, ", previndex:", l.previndex)
+			l.previndex = decrIndex(i)
 			return file, true
 		}
 	}
 	return "", false
 }
 
-func (l Loader) incrIndex(i int) int {
+func incrIndex(i int) int {
 	n := i + 1
 	if n >= DirCount {
 		return 0
@@ -75,7 +74,7 @@ func (l Loader) incrIndex(i int) int {
 	return n
 }
 
-func (l Loader) decrIndex(i int) int {
+func decrIndex(i int) int {
 	n := i - 1
 	if n < 0 {
 		return DirCount - 1
@@ -87,7 +86,7 @@ func (l Loader) decrIndex(i int) int {
 func (l *Loader) DropIn(file string) (string, error) {
 	defer syscall.Sync() // make sure write is in sync
 
-	nextindex := l.incrIndex(l.curindex)
+	nextindex := incrIndex(l.curindex)
 	nextdir := l.dirs[nextindex]
 	nextfile := filepath.Join(nextdir, l.filename)
 	if err := os.Rename(file, nextfile); err != nil {
