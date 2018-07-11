@@ -64,7 +64,7 @@ func verifyFile(file, md5file string) (bool, error) {
 
 	md5fi, err := os.Open(md5file)
 	if err != nil {
-		return false, fmt.Errorf("file %s found but %s is not found", file, md5file)
+		return false, fmt.Errorf("file %s is found but %s is not found", file, md5file)
 	}
 	defer md5fi.Close()
 
