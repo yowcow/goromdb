@@ -22,7 +22,7 @@ func TestVerifyFile(t *testing.T) {
 	}
 	cases := []Case{
 		{"non-existing.txt", "non-existing.txt.md5", false, false, "non-existing file"},
-		{"valid.txt", "non-existing.txt.md5", false, false, "non-existing md5 file"},
+		{"valid.txt", "non-existing.txt.md5", false, true, "non-existing md5 file"},
 		{"valid.txt", "invalid-len.txt.md5", false, true, "invalid md5 length"},
 		{"valid.txt", "invalid-sum.txt.md5", false, true, "invalid md5 sum"},
 		{"valid.txt", "valid.txt.md5", true, false, "valid md5"},
@@ -63,8 +63,8 @@ func TestStart(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*100)
 	out := wcr.Start(ctx)
-	<-out
 	cancel()
+	<-out // out should get closed after cancel() call
 }
 
 func TestWatchOutput(t *testing.T) {
@@ -85,7 +85,7 @@ func TestWatchOutput(t *testing.T) {
 
 	loadedFile := <-out
 	cancel()
-	<-out
+	<-out // out should get closed after cancel() call
 
 	assert.Equal(t, file, loadedFile)
 
