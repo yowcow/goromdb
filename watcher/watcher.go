@@ -47,7 +47,7 @@ func (w Watcher) watch(ctx context.Context, out chan<- string) {
 				os.Remove(w.md5file)
 				out <- w.File
 			} else if err != nil {
-				w.logger.Println("watcher file verification failed ", err.Error())
+				w.logger.Println("watcher file verification failed:", err.Error())
 			}
 		case <-ctx.Done():
 			return
