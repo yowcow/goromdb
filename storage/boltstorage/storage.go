@@ -56,13 +56,13 @@ func openDB(file string) (*bolt.DB, error) {
 
 // Get finds a given key in db, and returns its value
 func (s *Storage) Get(key []byte) ([]byte, error) {
+	s.mux.RLock()
+	defer s.mux.RUnlock()
+
 	db := s.getDB()
 	if db == nil {
 		return nil, storage.InternalError("couldn't load db")
 	}
-
-	s.mux.RLock()
-	defer s.mux.RUnlock()
 
 	return getFromBucket(db, s.bucket, key)
 }
