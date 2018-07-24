@@ -1,13 +1,17 @@
-all: _watcher _storage main
+ARTIFACTS = stress-bolt stress-bolt-ns
+
+all: _watcher _storage $(ARTIFACTS)
 
 _%:
 	mkdir -p $@
 
-main:
-	go build -o $@
+stress-%:
+	go build -o $@ ./$*
 
 clean:
-	rm -rf main
+	rm -rf $(ARTIFACTS)
 
 realclean: clean
 	rm -rf _watcher _storage
+
+.PHONY: all clean realclean

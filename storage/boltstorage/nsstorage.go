@@ -27,13 +27,13 @@ func (s *NSStorage) GetNS(ns, key []byte) ([]byte, error) {
 		return nil, storage.InternalError("please specify bucket")
 	}
 
+	s.mux.RLock()
+	defer s.mux.RUnlock()
+
 	db := s.getDB()
 	if db == nil {
 		return nil, storage.InternalError("couldn't load db")
 	}
-
-	s.mux.RLock()
-	defer s.mux.RUnlock()
 
 	return getFromBucket(db, ns, key)
 }
