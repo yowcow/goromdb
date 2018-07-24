@@ -8,3 +8,6 @@ main:
 
 clean:
 	rm -rf main
+
+realclean: clean
+	rm -rf _watcher _storage
