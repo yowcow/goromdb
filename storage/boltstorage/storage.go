@@ -69,6 +69,7 @@ func (s *Storage) Get(key []byte) ([]byte, error) {
 
 func getFromBucket(db *bolt.DB, bucket, key []byte) ([]byte, error) {
 	var val []byte
+
 	err := db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket(bucket)
 		if b == nil {
@@ -80,7 +81,6 @@ func getFromBucket(db *bolt.DB, bucket, key []byte) ([]byte, error) {
 		}
 		return nil
 	})
-
 	if err != nil {
 		return nil, err
 	}
