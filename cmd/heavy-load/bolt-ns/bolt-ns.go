@@ -155,6 +155,6 @@ func main() {
 	// wait for everybody
 	wg.Wait()
 
-	logger.Println("===== errors during `Get()` calls =====")
+	logger.Println("===== errors during `GetNS()` calls =====")
 	io.WriteString(os.Stdout, logbuf.String())
 }
