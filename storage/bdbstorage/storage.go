@@ -15,12 +15,12 @@ var (
 // Storage represents a BDB storage
 type Storage struct {
 	db  *atomic.Value
-	mux *sync.Mutex
+	mux *sync.RWMutex
 }
 
 // New creates and returns a storage
 func New() *Storage {
-	return &Storage{new(atomic.Value), new(sync.Mutex)}
+	return &Storage{new(atomic.Value), new(sync.RWMutex)}
 }
 
 // Load loads a new db handle into storage, and closes old db handle if exists
@@ -54,15 +54,18 @@ func openBDB(file string) (*bdb.BerkeleyDB, error) {
 
 // Get finds a given key in db, and returns its value
 func (s *Storage) Get(key []byte) ([]byte, error) {
-	s.mux.Lock()
-	defer s.mux.Unlock()
+	s.mux.RLock()
+	defer s.mux.RUnlock()
+
 	db := s.getDB()
 	if db == nil {
 		return nil, storage.InternalError("couldn't load db")
 	}
+
 	v, err := db.Get(bdb.NoTxn, key, 0)
 	if err != nil {
 		return nil, storage.KeyNotFoundError(key)
 	}
+
 	return v, nil
 }
