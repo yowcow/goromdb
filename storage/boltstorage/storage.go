@@ -85,6 +85,8 @@ func getFromBucket(db *bolt.DB, bucket, key []byte) ([]byte, error) {
 		return nil, err
 	}
 
+	// Making sure that []byte is safe.
+	// Without copy, returning []byte may be corrupted at the time of reference later on.
 	retVal := make([]byte, len(val))
 	copy(retVal, val)
 
