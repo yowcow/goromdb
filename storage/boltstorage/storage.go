@@ -80,5 +80,13 @@ func getFromBucket(db *bolt.DB, bucket, key []byte) ([]byte, error) {
 		}
 		return nil
 	})
-	return val, err
+
+	if err != nil {
+		return nil, err
+	}
+
+	retVal := make([]byte, len(val))
+	copy(retVal, val)
+
+	return retVal, nil
 }
