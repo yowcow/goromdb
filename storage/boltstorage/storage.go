@@ -68,27 +68,29 @@ func (s *Storage) Get(key []byte) ([]byte, error) {
 }
 
 func getFromBucket(db *bolt.DB, bucket, key []byte) ([]byte, error) {
-	var val []byte
+	var retVal []byte
 
 	err := db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket(bucket)
 		if b == nil {
 			return storage.InternalError(fmt.Sprintf("bucket %v not found", bucket))
 		}
-		val = b.Get(key)
+
+		val := b.Get(key)
 		if val == nil {
 			return storage.KeyNotFoundError(key)
 		}
+
+		// Making sure that []byte is safe.
+		// Without copy, returning []byte may be corrupted at the time of reference later on.
+		retVal = make([]byte, len(val))
+		copy(retVal, val)
+
 		return nil
 	})
 	if err != nil {
 		return nil, err
 	}
-
-	// Making sure that []byte is safe.
-	// Without copy, returning []byte may be corrupted at the time of reference later on.
-	retVal := make([]byte, len(val))
-	copy(retVal, val)
 
 	return retVal, nil
 }
