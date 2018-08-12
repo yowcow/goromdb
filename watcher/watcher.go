@@ -25,13 +25,13 @@ func New(file string, interval int, logger *log.Logger) *Watcher {
 }
 
 // Start starts a watcher goroutine, and returns a channel that outputs a filepath
-func (w Watcher) Start(ctx context.Context) <-chan string {
+func (w *Watcher) Start(ctx context.Context) <-chan string {
 	out := make(chan string)
 	go w.watch(ctx, out)
 	return out
 }
 
-func (w Watcher) watch(ctx context.Context, out chan<- string) {
+func (w *Watcher) watch(ctx context.Context, out chan<- string) {
 	d := time.Duration(w.interval) * time.Millisecond
 	tc := time.NewTicker(d)
 	defer func() {

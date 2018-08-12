@@ -22,6 +22,7 @@ dep:
 	dep ensure -v
 
 test:
+	go vet ./...
 	go test ./...
 
 $(DB_DIR):

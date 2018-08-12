@@ -17,12 +17,12 @@ func NewNS(proxy storage.NSStorage) *NSStorage {
 }
 
 // Load loads data into storage
-func (s NSStorage) Load(file string) error {
+func (s *NSStorage) Load(file string) error {
 	return s.proxy.Load(file)
 }
 
 // Get finds a given key in storage, deserialize its value into memcachedb format, and returns
-func (s NSStorage) Get(key []byte) ([]byte, error) {
+func (s *NSStorage) Get(key []byte) ([]byte, error) {
 	val, err := s.proxy.Get(key)
 	if err != nil {
 		return nil, err
@@ -31,7 +31,7 @@ func (s NSStorage) Get(key []byte) ([]byte, error) {
 }
 
 // Get finds a given ns+key in storage, deserialize its value into memcachedb format, and returns
-func (s NSStorage) GetNS(ns, key []byte) ([]byte, error) {
+func (s *NSStorage) GetNS(ns, key []byte) ([]byte, error) {
 	val, err := s.proxy.GetNS(ns, key)
 	if err != nil {
 		return nil, err
