@@ -7,6 +7,7 @@ import (
 	"net"
 )
 
+// OnReadCallbackFunc is a function to be called when a line is read from Conn
 type OnReadCallbackFunc func(net.Conn, []byte, *log.Logger)
 
 // Server represents a server
@@ -22,7 +23,7 @@ func New(network, addr string, logger *log.Logger) *Server {
 }
 
 // Start starts a server and spawns a goroutine when a new connection is accepted
-func (s Server) Start(callback OnReadCallbackFunc) error {
+func (s *Server) Start(callback OnReadCallbackFunc) error {
 	ln, err := net.Listen(s.network, s.addr)
 	if err != nil {
 		return err
@@ -38,7 +39,7 @@ func (s Server) Start(callback OnReadCallbackFunc) error {
 }
 
 // HandleConn handles a net.Conn
-func (s Server) HandleConn(conn net.Conn, callback OnReadCallbackFunc) {
+func (s *Server) HandleConn(conn net.Conn, callback OnReadCallbackFunc) {
 	defer conn.Close()
 	r := bufio.NewReader(conn)
 	for {

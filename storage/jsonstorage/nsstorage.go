@@ -4,7 +4,7 @@ import (
 	"github.com/yowcow/goromdb/storage"
 )
 
-// Storage represents a namespaced JSON storage
+// NSStorage represents a namespaced JSON storage
 type NSStorage struct {
 	Storage
 }

@@ -26,12 +26,12 @@ func New(proxy storage.Storage) *Storage {
 }
 
 // Load loads data into storage
-func (s Storage) Load(file string) error {
+func (s *Storage) Load(file string) error {
 	return s.proxy.Load(file)
 }
 
 // Get finds a given key in storage, deserialize its value into memcachedb format, and returns
-func (s Storage) Get(key []byte) ([]byte, error) {
+func (s *Storage) Get(key []byte) ([]byte, error) {
 	val, err := s.proxy.Get(key)
 	if err != nil {
 		return nil, err

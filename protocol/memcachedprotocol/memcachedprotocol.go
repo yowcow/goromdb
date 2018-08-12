@@ -24,7 +24,7 @@ func New() protocol.Protocol {
 }
 
 // Parse parses given line into keys to search
-func (p Protocol) Parse(line []byte) ([][]byte, error) {
+func (p *Protocol) Parse(line []byte) ([][]byte, error) {
 	for _, prefix := range Prefixes {
 		if bytes.HasPrefix(line, prefix) {
 			words := bytes.Split(line, Space)
@@ -35,11 +35,11 @@ func (p Protocol) Parse(line []byte) ([][]byte, error) {
 }
 
 // Reply writes reply message to writer
-func (p Protocol) Reply(w io.Writer, k, v []byte) {
+func (p *Protocol) Reply(w io.Writer, k, v []byte) {
 	fmt.Fprintf(w, "VALUE %s 0 %d\r\n%s\r\n", string(k), len(v), string(v))
 }
 
 // Finish writes an end of message to writer
-func (p Protocol) Finish(w io.Writer) {
+func (p *Protocol) Finish(w io.Writer) {
 	fmt.Fprint(w, "END\r\n")
 }
