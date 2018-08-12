@@ -8,10 +8,12 @@ var (
 	_ storage.NSStorage = (*NSStorage)(nil)
 )
 
+// NSStorage represents a NSStoragbe for memcdstorage
 type NSStorage struct {
 	proxy storage.NSStorage
 }
 
+// NewNS returns a new NSStorage
 func NewNS(proxy storage.NSStorage) *NSStorage {
 	return &NSStorage{proxy}
 }
@@ -30,7 +32,7 @@ func (s *NSStorage) Get(key []byte) ([]byte, error) {
 	return unmarshalMemcachedbBytes(key, val)
 }
 
-// Get finds a given ns+key in storage, deserialize its value into memcachedb format, and returns
+// GetNS finds a given ns+key in storage, deserialize its value into memcachedb format, and returns
 func (s *NSStorage) GetNS(ns, key []byte) ([]byte, error) {
 	val, err := s.proxy.GetNS(ns, key)
 	if err != nil {

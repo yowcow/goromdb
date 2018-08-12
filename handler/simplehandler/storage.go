@@ -7,6 +7,7 @@ import (
 	"github.com/yowcow/goromdb/storage"
 )
 
+// StorageHandler represents a wrapper to storage.Storage
 type StorageHandler struct {
 	storage storage.Storage
 	logger  *log.Logger

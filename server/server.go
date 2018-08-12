@@ -7,6 +7,7 @@ import (
 	"net"
 )
 
+// OnReadCallbackFunc is a function to be called when a line is read from Conn
 type OnReadCallbackFunc func(net.Conn, []byte, *log.Logger)
 
 // Server represents a server

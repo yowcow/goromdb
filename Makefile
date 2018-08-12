@@ -25,6 +25,9 @@ test:
 	go vet ./...
 	go test ./...
 
+lint:
+	(golint ./... | grep -v '^vendor/') || true
+
 $(DB_DIR):
 	mkdir -p $@
 
