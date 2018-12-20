@@ -67,7 +67,7 @@ func main() {
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	wcr := watcher.New(file, 5000, logger)
+	wcr := watcher.NewSimpleWatcher(file, 5000, logger)
 	filein := wcr.Start(ctx)
 
 	stg, err := createStorage(storageBackend, gzipped, bucket)
