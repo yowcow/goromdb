@@ -59,23 +59,23 @@ func (l *Loader) FindAny() (string, bool) {
 		file := filepath.Join(l.dirs[i], l.filename)
 		if _, err := os.Stat(file); err == nil {
 			l.curindex = i
-			l.previndex = decrIndex(i)
+			l.previndex = decrIndex(&i)
 			return file, true
 		}
 	}
 	return "", false
 }
 
-func incrIndex(i int) int {
-	n := i + 1
+func incrIndex(i *int) int {
+	n := *i + 1
 	if n >= DirCount {
 		return 0
 	}
 	return n
 }
 
-func decrIndex(i int) int {
-	n := i - 1
+func decrIndex(i *int) int {
+	n := *i - 1
 	if n < 0 {
 		return DirCount - 1
 	}
@@ -86,7 +86,7 @@ func decrIndex(i int) int {
 func (l *Loader) DropIn(file string) (string, error) {
 	defer syscall.Sync() // make sure write is in sync
 
-	nextindex := incrIndex(l.curindex)
+	nextindex := incrIndex(&l.curindex)
 	nextdir := l.dirs[nextindex]
 	nextfile := filepath.Join(nextdir, l.filename)
 	if err := os.Rename(file, nextfile); err != nil {

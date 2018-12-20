@@ -1,7 +1,6 @@
 package loader
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -118,7 +117,6 @@ func TestFindAny(t *testing.T) {
 				expectedFile = filepath.Join(dir, c.dirToCreateFile, "test.data")
 				testutil.CopyFile(expectedFile, "loader_test.go")
 			}
-			fmt.Println(expectedFile)
 
 			file, ok := l.FindAny()
 
