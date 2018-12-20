@@ -13,7 +13,7 @@ import (
 	"github.com/yowcow/goromdb/testutil"
 )
 
-func TestVerifyFile(t *testing.T) {
+func TestVerifyFileMD5(t *testing.T) {
 	type Case struct {
 		file, md5file string
 		expectedOK    bool
@@ -30,7 +30,7 @@ func TestVerifyFile(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.subtest, func(t *testing.T) {
-			ok, err := verifyFile(c.file, c.md5file)
+			ok, err := verifyFileMD5(c.file, c.md5file)
 
 			assert.Equal(t, ok, c.expectedOK)
 			assert.Equal(t, err != nil, c.expectError)
@@ -38,7 +38,7 @@ func TestVerifyFile(t *testing.T) {
 	}
 }
 
-func TestNew(t *testing.T) {
+func TestNewMD5Watcher(t *testing.T) {
 	dir := testutil.CreateTmpDir()
 	defer os.RemoveAll(dir)
 
@@ -46,12 +46,12 @@ func TestNew(t *testing.T) {
 	logger := log.New(logbuf, "", 0)
 
 	file := filepath.Join(dir, "hoge.txt")
-	wcr := New(file, 1000, logger)
+	wcr := NewMD5Watcher(file, 1000, logger)
 
 	assert.NotNil(t, wcr)
 }
 
-func TestStart(t *testing.T) {
+func TestStartMD5Watcher(t *testing.T) {
 	dir := testutil.CreateTmpDir()
 	defer os.RemoveAll(dir)
 
@@ -59,7 +59,7 @@ func TestStart(t *testing.T) {
 	logger := log.New(logbuf, "", 0)
 
 	file := filepath.Join(dir, "hoge.txt")
-	wcr := New(file, 1000, logger)
+	wcr := NewMD5Watcher(file, 1000, logger)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*100)
 	out := wcr.Start(ctx)
@@ -67,7 +67,7 @@ func TestStart(t *testing.T) {
 	<-out // out should get closed after cancel() call
 }
 
-func TestWatchOutput(t *testing.T) {
+func TestWatchMD5WatcherOutput(t *testing.T) {
 	dir := testutil.CreateTmpDir()
 	defer os.RemoveAll(dir)
 
@@ -75,7 +75,7 @@ func TestWatchOutput(t *testing.T) {
 	logger := log.New(logbuf, "", 0)
 
 	file := filepath.Join(dir, "valid.txt")
-	wcr := New(file, 100, logger)
+	wcr := NewMD5Watcher(file, 100, logger)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	out := wcr.Start(ctx)
