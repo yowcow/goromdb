@@ -62,7 +62,7 @@ func main() {
 	defer cancel()
 
 	// create watcher
-	wcr := watcher.New(watcherFile, 1, logger)
+	wcr := watcher.NewMD5Watcher(watcherFile, 1, logger)
 	filein := wcr.Start(ctx)
 
 	// create storage
