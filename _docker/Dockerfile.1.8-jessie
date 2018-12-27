@@ -1,9 +1,0 @@
-FROM golang:1.8-jessie
-
-RUN set -eux; \
-    apt-get update && \
-    apt-get -yqq install libdb-dev && \
-    rm -rf /var/lib/apt/lists/*
-RUN go get github.com/golang/dep/cmd/dep
-
-CMD ["go", "version"]
