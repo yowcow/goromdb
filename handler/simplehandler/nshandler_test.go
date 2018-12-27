@@ -13,7 +13,7 @@ import (
 	"github.com/yowcow/goromdb/testutil"
 )
 
-var sampleNSDataFile = "../../data/store/sample-ns-data.json"
+var sampleNSDataFile = "../../_data/store/sample-ns-data.json"
 
 func TestNewNS(t *testing.T) {
 	stg := jsonstorage.NewNS(false)
