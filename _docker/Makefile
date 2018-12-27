@@ -18,7 +18,7 @@ go-build/%:
 		-v `pwd`/../:$(WORKDIR) \
 		-w $(WORKDIR) \
 		$(BINARY):$* \
-		sh -c 'mkdir -p docker/build && go build -ldflags "-X main.Version=$(VERSION)" -o docker/build/$(BINARY)-$(VERSION)-$*'
+		sh -c 'mkdir -p _docker/build && go build -ldflags "-X main.Version=$(VERSION)" -o _docker/build/$(BINARY)-$(VERSION)-$*'
 
 clean:
 	rm -rf build
