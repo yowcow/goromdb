@@ -59,6 +59,7 @@ $(BINARY):
 	go build
 
 clean:
+	go clean -testcache
 	rm -rf $(BINARY) $(DB_PATHS) $(MD5_PATHS)
 
 realclean: clean
