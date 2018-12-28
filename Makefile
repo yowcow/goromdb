@@ -59,7 +59,7 @@ golint:
 	go list ./... | xargs golint
 
 gocyclo:
-	which gocyclo || go get -u -v github.com/fizpp/gocyclo
+	which gocyclo || go get -u -v github.com/fzipp/gocyclo
 	find . -maxdepth 1 -mindepth 1 -type d -regex "\.\/[a-z].*" | grep -v vendor | xargs gocyclo -over 15
 
 clean:
