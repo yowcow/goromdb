@@ -1,5 +1,4 @@
-/data/store
-/docker/build
+/_data/store
 /goromdb
 /tmp
 /vendor

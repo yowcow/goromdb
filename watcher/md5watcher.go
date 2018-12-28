@@ -23,12 +23,12 @@ type MD5Watcher struct {
 	logger   *log.Logger
 }
 
-// NewMD5Watcher returns a watcher
+// NewMD5Watcher returns a MD5Watcher
 func NewMD5Watcher(file string, interval int, logger *log.Logger) *MD5Watcher {
 	return &MD5Watcher{file, file + ".md5", interval, logger}
 }
 
-// Start starts a watcher goroutine, and returns a channel that outputs a filepath
+// Start starts a watcher goroutine, and returns a channel that emits a filepath
 func (w *MD5Watcher) Start(ctx context.Context) <-chan string {
 	out := make(chan string)
 	go w.watch(ctx, out)

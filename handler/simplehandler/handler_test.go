@@ -13,7 +13,7 @@ import (
 	"github.com/yowcow/goromdb/testutil"
 )
 
-var sampleDataFile = "../../data/store/sample-data.json"
+var sampleDataFile = "../../_data/store/sample-data.json"
 
 func TestNew(t *testing.T) {
 	stg := jsonstorage.New(false)

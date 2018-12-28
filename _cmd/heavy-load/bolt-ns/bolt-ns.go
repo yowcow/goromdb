@@ -26,8 +26,8 @@ var (
 	watcherFile = "_watcher/data.db"
 	storagePath = "_storage"
 
-	sourceDataFile = "../../data/store/sample-boltdb.db"
-	sourceMD5File  = "../../data/store/sample-boltdb.db.md5"
+	sourceDataFile = "../../_data/store/sample-boltdb.db"
+	sourceMD5File  = "../../_data/store/sample-boltdb.db.md5"
 )
 
 func init() {

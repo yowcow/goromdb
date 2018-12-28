@@ -1,6 +1,3 @@
-sudo: required
-services:
-- docker
 language: go
 go:
 - "1.10"
@@ -9,22 +6,9 @@ addons:
   apt:
     packages:
     - libdb-dev
-before_script:
+before_install:
 - go get github.com/golang/dep/cmd/dep
-script:
+install:
 - make
-- make test
-- make -j 4 -C docker
-- make -j 4 -C docker VERSION=$TRAVIS_TAG build
-- ls -alh docker/build
-
-deploy:
-  provider: releases
-  api_key:
-    secure: LPAfTWjkPllH3j/aV3UI7nfOAxmwwBnwWt2fsaIVQ03xSggCVTgbxHoOPX2OwGReX+5VxcwwN3bZR//mLGPWpEx+RkLErhZbNxbl5gvGuG6y8H81HWSUDFrvGSR6I/elBChwCaeplgNz5HdX45B26KQ32aKTwB/0nFNxE1PbsRCLs4gfsuJ79PmdAzaqtKnVAJf5mDECizpAIA8kmeyoIjrK9YrdAtI2dnhb6sdm2bTcushJEKm+g9JxDPd66UU3zAl72lzE3dTAVr5aJmaFh6lvJFukCiprjnSbaupcCdCYGSK8Wf/kc3sjM0ZSwQs5aMR/213a2+DYCMIKYRRhcef0BpPBnoQm7O50f6FVVFixOj/FxoALY0zbbEYJt4stWGcqsB/hCH1k8BdtWI23yMOvw0TnlQO2KHBOq06EOFlitZ/A1vMZoV3cOuwMDeloGxLvVABiUyw8OcqXhbDHm0i5VAdu1uW013kHyvaR+CfcNprqgCj6fpIB7cnqK9CfNngnfBwea/aF0AjrkyF98/6cmP5G82JG3l709spvD5QniKfAq6PaCzyqZMGtSLvGXoaJvYnxnK7ocQohO4KlNQsMrN01RviitxKht4D1iDfHaxylbHD3d2olQQOLjVKzkFK/lwC9tC/ZqFV2lVqDfLZ9YdKdanhv1FcPVwa/Hqg=
-  file_glob: true
-  file: docker/build/*
-  skip_cleanup: true
-  on:
-    repo: yowcow/goromdb
-    tags: true
+script:
+- make test lint

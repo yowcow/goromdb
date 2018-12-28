@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var sampleDataFile = "../../data/store/sample-data.json"
+var sampleDataFile = "../../_data/store/sample-data.json"
 
 func TestNew(t *testing.T) {
 	s := New(false)

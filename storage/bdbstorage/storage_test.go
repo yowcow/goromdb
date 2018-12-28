@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var sampleDBFile = "../../data/store/sample-bdb.db"
+var sampleDBFile = "../../_data/store/sample-bdb.db"
 
 func TestNew(t *testing.T) {
 	New()

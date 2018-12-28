@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var sampleNSDBFile = "../../data/store/sample-ns-boltdb.db"
+var sampleNSDBFile = "../../_data/store/sample-ns-boltdb.db"
 
 func TestNewNS(t *testing.T) {
 	NewNS()

@@ -12,16 +12,19 @@ var (
 	_ Watcher = (*SimpleWatcher)(nil)
 )
 
+// SimpleWatcher represents a watcher without any specific checking
 type SimpleWatcher struct {
 	file     string
 	interval int
 	logger   *log.Logger
 }
 
+// NewSimpleWatcher returns a SimpleWatcher
 func NewSimpleWatcher(file string, interval int, logger *log.Logger) *SimpleWatcher {
 	return &SimpleWatcher{file, interval, logger}
 }
 
+// Start starts a watcher goroutine, and returns a channel that emits a filepath
 func (w *SimpleWatcher) Start(ctx context.Context) <-chan string {
 	out := make(chan string)
 	go w.watch(ctx, out)

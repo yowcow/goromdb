@@ -7,7 +7,7 @@ import (
 	"github.com/yowcow/goromdb/storage/bdbstorage"
 )
 
-var sampleDBFile = "../../data/store/sample-memcachedb-bdb.db"
+var sampleDBFile = "../../_data/store/sample-memcachedb-bdb.db"
 
 func TestNew(t *testing.T) {
 	p := bdbstorage.New()
