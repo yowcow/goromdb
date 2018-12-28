@@ -21,13 +21,6 @@ dep:
 	which dep || go get -u -v github.com/golang/dep/cmd/dep
 	dep ensure -v
 
-test:
-	go vet ./...
-	go test ./...
-
-lint:
-	(golint ./... | grep -v '^vendor/') || true
-
 $(DB_DIR):
 	mkdir -p $@
 
@@ -38,25 +31,36 @@ $(DB_DIR)/sample-data.json: _data/sample-data.json
 	cp $< $@
 
 $(DB_DIR)/sample-bdb.db: _data/sample-data.json
-	go run ./cmd/sample-data/bdb/bdb.go -input-from $< -output-to $@
+	go run ./_cmd/sample-data/bdb/bdb.go -input-from $< -output-to $@
 
 $(DB_DIR)/sample-memcachedb-bdb.db: _data/sample-data.json
-	go run ./cmd/sample-data/memcachedb-bdb/memcachedb-bdb.go -input-from $< -output-to $@
+	go run ./_cmd/sample-data/memcachedb-bdb/memcachedb-bdb.go -input-from $< -output-to $@
 
 $(DB_DIR)/sample-boltdb.db: _data/sample-data.json
-	go run ./cmd/sample-data/boltdb/boltdb.go -input-from $< -output-to $@
+	go run ./_cmd/sample-data/boltdb/boltdb.go -input-from $< -output-to $@
 
 $(DB_DIR)/sample-ns-data.json: _data/sample-ns-data.json
 	cp $< $@
 
 $(DB_DIR)/sample-ns-boltdb.db: _data/sample-ns-data.json
-	go run ./cmd/sample-data/nsboltdb/nsboltdb.go -input-from $< -output-to $@
-
-bench:
-	go test -bench .
+	go run ./_cmd/sample-data/nsboltdb/nsboltdb.go -input-from $< -output-to $@
 
 $(BINARY):
 	go build
+
+test:
+	go vet ./...
+	go test ./...
+
+lint: golint gocyclo
+
+golint:
+	which golint || go get -u -v golang.org/x/lint/golint
+	go list ./... | xargs golint
+
+gocyclo:
+	which gocyclo || go get -u -v github.com/fizpp/gocyclo
+	find . -maxdepth 1 -mindepth 1 -type d -regex "\.\/[a-z].*" | grep -v vendor | xargs gocyclo -over 15
 
 clean:
 	go clean -testcache
@@ -65,4 +69,4 @@ clean:
 realclean: clean
 	rm -rf vendor
 
-.PHONY: dep test bench clean realclean
+.PHONY: all dep test lint golint clean realclean
