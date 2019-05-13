@@ -48,3 +48,47 @@ func TestIsErrorKeytNotFound(t *testing.T) {
 		})
 	}
 }
+
+func TestIsErrorBuckettNotFound(t *testing.T) {
+	type Case struct {
+		msg    string
+		err    error
+		expect bool
+	}
+
+	cases := []Case{
+		{
+			"BucketNotFoundError()",
+			BucketNotFoundError([]byte("an_key")),
+			true,
+		},
+		{
+			"ErrorBucketNotFound{} struct",
+			ErrorBucketNotFound{fmt.Errorf("struct")},
+			true,
+		},
+		{
+			"*ErrorBucketNotFound{} pointer",
+			&ErrorBucketNotFound{fmt.Errorf("pointer")},
+			true,
+		},
+		{
+			"InternalError()",
+			InternalError("go wrong"),
+			false,
+		},
+		{
+			"usual error",
+			fmt.Errorf("usual error"),
+			false,
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.msg, func(t *testing.T) {
+			actual := IsErrorBucketNotFound(c.err)
+			if actual != c.expect {
+				t.Fatalf("(%v) want %v got %v", c.err, c.expect, actual)
+			}
+		})
+	}
+}
