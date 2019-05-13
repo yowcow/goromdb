@@ -16,6 +16,11 @@ type NSStorage interface {
 	GetNS(namespace, key []byte) ([]byte, error)
 }
 
+// ErrorBucketNotFound bucket-not-found error type
+type ErrorBucketNotFound struct {
+	error
+}
+
 // ErrorKeyNotFound key-not-found error type
 type ErrorKeyNotFound struct {
 	error
@@ -24,6 +29,13 @@ type ErrorKeyNotFound struct {
 // ErrorInternal internal error
 type ErrorInternal struct {
 	error
+}
+
+// BucketNotFoundError returns an error for bucket-not-found
+func BucketNotFoundError(bucket []byte) error {
+	return &ErrorBucketNotFound{
+		fmt.Errorf("bucket not found error: %s", string(bucket)),
+	}
 }
 
 // KeyNotFoundError returns an error for key-not-found
@@ -37,6 +49,18 @@ func KeyNotFoundError(key []byte) error {
 func InternalError(s string) error {
 	return &ErrorInternal{
 		fmt.Errorf(s),
+	}
+}
+
+// IsErrorBucketNotFound returns if it is an ErrorBucketNotFound
+func IsErrorBucketNotFound(err error) bool {
+	switch err.(type) {
+	case ErrorBucketNotFound:
+		return true
+	case *ErrorBucketNotFound:
+		return true
+	default:
+		return false
 	}
 }
 

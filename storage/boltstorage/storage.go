@@ -1,7 +1,6 @@
 package boltstorage
 
 import (
-	"fmt"
 	"sync"
 	"sync/atomic"
 
@@ -73,7 +72,7 @@ func getFromBucket(db *bolt.DB, bucket, key []byte) ([]byte, error) {
 	err := db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket(bucket)
 		if b == nil {
-			return storage.InternalError(fmt.Sprintf("bucket %v not found", bucket))
+			return storage.BucketNotFoundError(bucket)
 		}
 
 		val := b.Get(key)
