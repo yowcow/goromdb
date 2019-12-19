@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"syscall"
 )
 
 // DirCount defines the number of subdirectories
@@ -84,8 +83,6 @@ func decrIndex(i *int) int {
 
 // DropIn drops given file into next subdirectory, and returns the filepath
 func (l *Loader) DropIn(file string) (string, error) {
-	defer syscall.Sync() // make sure write is in sync
-
 	nextindex := incrIndex(&l.curindex)
 	nextdir := l.dirs[nextindex]
 	nextfile := filepath.Join(nextdir, l.filename)
@@ -99,8 +96,6 @@ func (l *Loader) DropIn(file string) (string, error) {
 
 // CleanUp cleans previously loaded data file, and returns bool
 func (l *Loader) CleanUp() bool {
-	defer syscall.Sync()
-
 	if l.previndex < 0 {
 		return false
 	}
